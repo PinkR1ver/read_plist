@@ -53,9 +53,13 @@ if __name__ == '__main__':
     if upload_file is None:
         
         upload_file = os.path.join(base_path, '12344_left_VOG_lefteye_Horizontal.plist')
+        with open(upload_file, 'rb') as plist_file:
+            data = plistlib.load(plist_file)
+    
+    else:
         
-    with open(upload_file, 'rb') as plist_file:
-        data = plistlib.load(plist_file)
+        bytes_data = upload_file.getvalue()
+        data = plistlib.loads(bytes_data)
     
     st.markdown('### Original Signal')
     
