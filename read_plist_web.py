@@ -300,10 +300,8 @@ if __name__ == '__main__':
     time = np.linspace(0, len(data) / sampling_frequency, len(data))
     fig.line(time, data, line_width=2)
     st.bokeh_chart(fig)
-    print(key_points_list)
     
     data, key_points_list = data_compress(data, compress_ratio, key_points_list)
-    print(key_points_list)
     
     st.write('After data compress in time domain, we get the following signal:')
     
