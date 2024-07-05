@@ -144,12 +144,14 @@ def hollow_downsampling(data, downsample_window=0):
     return data_downsampled
 
 
-def quantification(data, threshold):
+def quantification(data, threshold, key_points_list):
     
-    data = np.array(data)
-    data = np.round(data / threshold) * threshold
-    
-    return data
+    for i in range(0, len(key_points_list)):
+        data[key_points_list[i]] = np.round(data[key_points_list[i]] / threshold) * threshold
+        
+    data_connect = data_connection(data, key_points_list)
+        
+    return data_connect
 
 
 def get_diff(data):
@@ -183,7 +185,11 @@ def data_compress(data, compressed_ratio, key_points_list):
         right_stop = key_points_cp[i][1]
         data_cp[left:right] = np.linspace(left_start, right_stop, right - left)
     
-    return data_cp
+    key_points_return = key_points_list.copy()
+    key_points_return = [key_points[0] for key_points in key_points_cp]
+    key_points_return[-1] = data_len - 1
+    
+    return data_cp, key_points_return
 
 if __name__ == '__main__':
     
@@ -194,12 +200,13 @@ if __name__ == '__main__':
         st.title('Control the filter parameters')
         
         sampling_frequency = st.slider('Sampling frequency', 0.0, 10000.0, 1000.0)
-        high_pass_cutoff = st.slider('High-pass filter cutoff frequency', 0.0, 1000.0, 0.8)
+        high_pass_cutoff = st.slider('High-pass filter cutoff frequency', 0.0, 3.0, 0.8)
         high_pass_order = st.slider('High-pass filter order', 1, 10, 5)
-        low_pass_cutoff = st.slider('Low-pass filter cutoff frequency', 0.0, 1000.0, 80.0)
+        low_pass_cutoff = st.slider('Low-pass filter cutoff frequency', 0.0, 500.0, 80.0)
         low_pass_order = st.slider('Low-pass filter order', 1, 10, 5)
         moving_average_window = st.slider('Moving average window size', 1, 100, 5)
-        compress_ratio = st.slider('Compress ratio', 0.0, 1.0, 0.2)
+        compress_ratio = st.slider('Compress ratio', 0.0, 1.0, 0.2, step=0.05)
+        quantification_threshold = st.slider('Quantification threshold', 0.0, 4.0, 0.5)
         
     
 
@@ -267,7 +274,7 @@ if __name__ == '__main__':
     # fig.line(range(len(diff)), diff, line_width=2)
     # st.bokeh_chart(fig)
     
-    st.markdown('### Download Filtered Data')
+    st.markdown('### Key Point Detection and Connection')
     st.write('Here\'s the final result, we did the key point detection and use straight line to connect them')
     
     # data = average_downsample(data, data_downsampling_window)
@@ -280,12 +287,31 @@ if __name__ == '__main__':
     # data = hollow_downsampling(data, downsample_window=data_downsampling_window)
     # data = quantification(data, quantification_threshold)
     
+    st.markdown('### Time Domain Data Compression and Quantification')
+    
     fig = figure(title='After doing connection', x_axis_label='Data Index', y_axis_label='Amplitude', width=800, height=400)
     fig.line(range(len(data_connect)), data_connect, line_width=2)
     st.bokeh_chart(fig)
     
     data = data_connect
-    data = data_compress(data, compress_ratio, key_points_list)
+    data, key_points_list = data_compress(data, compress_ratio, key_points_list)
+    
+    st.write('After data compress in time domain, we get the following signal:')
+    
+    fig = figure(title='After Data Compress', x_axis_label='Data Index', y_axis_label='Amplitude', width=800, height=400)
+    fig.line(range(len(data)), data, line_width=2)
+    st.bokeh_chart(fig)
+    
+    data = quantification(data, quantification_threshold, key_points_list)
+    
+    st.write('After quantification, we get the following signal:')
+    
+    fig = figure(title='After Quantification', x_axis_label='Data Index', y_axis_label='Amplitude', width=800, height=400)
+    fig.line(range(len(data)), data, line_width=2)
+    st.bokeh_chart(fig)
+    
+    st.markdown('### Save the Result')
+    st.write('Here\'s the final result, you can download the graph and save the data to a .csv file.')
     
     fig = figure(title=f'{upload_file_name}', x_axis_label='Data Index', y_axis_label='Amplitude', width=800, height=400, y_range=(-40, 40))
     _interval = len(data) // 5
@@ -295,6 +321,7 @@ if __name__ == '__main__':
     fig.grid.grid_line_alpha = 0.2
     fig.line(range(len(data)), data, line_width=2, line_color='red')
     st.bokeh_chart(fig)
+    
     
         
     
