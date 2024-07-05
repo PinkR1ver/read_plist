@@ -172,7 +172,7 @@ def data_compress(data, compressed_ratio, key_points_list):
     
     data_len = key_points_cp[-1][0]
     
-    data_cp = np.zeros(data_len)
+    data_cp = np.zeros(data_len + 1)
     for i in range(1, len(key_points_cp) - 1):
         left = key_points_cp[i-1][0]
         right = key_points_cp[i][0] + 1
