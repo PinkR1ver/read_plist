@@ -119,29 +119,29 @@ def data_connection(data, key_ponits_list):
     
     return result
 
-def hollow_downsampling(data, downsample_window=0):
+# def hollow_downsampling(data, downsample_window=0):
     
-    if downsample_window == 0:
+#     if downsample_window == 0:
         
-        zero_interval = 0
-        zero_interval_min = 99
-        for i in range(len(data)):
-            if data[i] == 0:
-                zero_interval += 1
-            else:
-                zero_interval_min = min(zero_interval, zero_interval_min)
-                zero_interval = 0
+#         zero_interval = 0
+#         zero_interval_min = 99
+#         for i in range(len(data)):
+#             if data[i] == 0:
+#                 zero_interval += 1
+#             else:
+#                 zero_interval_min = min(zero_interval, zero_interval_min)
+#                 zero_interval = 0
 
-        downsample_window = zero_interval_min
+#         downsample_window = zero_interval_min
     
-    data_downsampled = []
-    for i in range(0, len(data), downsample_window):
-        if data[i:i+downsample_window].sum() == 0:
-            data_downsampled.append(0)
-        else:
-            data_downsampled.append(data[i:i+downsample_window].sum())
+#     data_downsampled = []
+#     for i in range(0, len(data), downsample_window):
+#         if data[i:i+downsample_window].sum() == 0:
+#             data_downsampled.append(0)
+#         else:
+#             data_downsampled.append(data[i:i+downsample_window].sum())
             
-    return data_downsampled
+#     return data_downsampled
 
 
 def quantification(data, threshold, key_points_list):
@@ -186,7 +186,9 @@ def data_compress(data, compressed_ratio, key_points_list):
         data_cp[left:right] = np.linspace(left_start, right_stop, right - left)
     
     key_points_return = key_points_list.copy()
-    key_points_return = [key_points[0] for key_points in key_points_cp]
+    for i in range(0, len(key_points_return)):
+        key_points_return[i] = int(key_points_return[i] * compressed_ratio)
+    key_points_return = list(set(key_points_return))
     key_points_return[-1] = data_len - 1
     
     return data_cp, key_points_return
@@ -199,10 +201,10 @@ if __name__ == '__main__':
         
         st.title('Control the filter parameters')
         
-        sampling_frequency = st.slider('Sampling frequency', 0.0, 10000.0, 1000.0)
-        high_pass_cutoff = st.slider('High-pass filter cutoff frequency', 0.0, 3.0, 0.8)
+        sampling_frequency = st.slider('Sampling frequency', 0.0, 500.0, 50.0)
+        high_pass_cutoff = st.slider('High-pass filter cutoff frequency', 0.0, 3.0, 0.1)
         high_pass_order = st.slider('High-pass filter order', 1, 10, 5)
-        low_pass_cutoff = st.slider('Low-pass filter cutoff frequency', 0.0, 500.0, 80.0)
+        low_pass_cutoff = st.slider('Low-pass filter cutoff frequency', 0.0, 30.0, 8.0)
         low_pass_order = st.slider('Low-pass filter order', 1, 10, 5)
         moving_average_window = st.slider('Moving average window size', 1, 100, 5)
         compress_ratio = st.slider('Compress ratio', 0.0, 1.0, 0.2, step=0.05)
@@ -231,7 +233,7 @@ if __name__ == '__main__':
     st.markdown('### Original Signal')
     
     # plot original signal
-    fig = figure(title='Original Signal', x_axis_label='Data Index', y_axis_label='Amplitude', width=800, height=400)
+    fig = figure(title='Original Signal', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400)
     fig.line(range(len(data)), data, line_width=2)
     st.bokeh_chart(fig)
     
@@ -241,8 +243,9 @@ if __name__ == '__main__':
     data_filtered = butter_highpass_filter(data, high_pass_cutoff, sampling_frequency, high_pass_order)
     data = data_filtered
     
-    fig = figure(title='Signal After highpass filter', x_axis_label='Data Index', y_axis_label='Amplitude', width=800, height=400)
-    fig.line(range(len(data)), data, line_width=2)
+    fig = figure(title='Signal After highpass filter', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400)
+    time = np.linspace(0, len(data) / sampling_frequency, len(data))
+    fig.line(time, data, line_width=2)
     st.bokeh_chart(fig)
     
     st.markdown('### Low Pass Filter')
@@ -251,8 +254,9 @@ if __name__ == '__main__':
     data_filtered = butter_lowpass_filter(data, low_pass_cutoff, sampling_frequency, low_pass_order)
     data = data_filtered
     
-    fig = figure(title='Signal After lowpass filter', x_axis_label='Data Index', y_axis_label='Amplitude', width=800, height=400)
-    fig.line(range(len(data)), data, line_width=2)
+    fig = figure(title='Signal After lowpass filter', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400)
+    time = np.linspace(0, len(data) / sampling_frequency, len(data))
+    fig.line(time, data, line_width=2)
     st.bokeh_chart(fig)
     
     st.markdown('### Moving Average Filter')
@@ -261,8 +265,9 @@ if __name__ == '__main__':
     data_filtered = moving_average_filter(data, moving_average_window)
     data = data_filtered
     
-    fig = figure(title='Signal After moving average filter', x_axis_label='Data Index', y_axis_label='Amplitude', width=800, height=400)
-    fig.line(range(len(data)), data, line_width=2)
+    fig = figure(title='Signal After moving average filter', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400)
+    time = np.linspace(0, len(data) / sampling_frequency, len(data))
+    fig.line(time, data, line_width=2)
     st.bokeh_chart(fig)
     
     # st.markdown('### Get the Derivative of the Signal')
@@ -270,7 +275,7 @@ if __name__ == '__main__':
     
     # diff = get_diff(data)
     
-    # fig = figure(title='Derivative of the Signal', x_axis_label='Data Index', y_axis_label='Amplitude', width=800, height=400)
+    # fig = figure(title='Derivative of the Signal', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400)
     # fig.line(range(len(diff)), diff, line_width=2)
     # st.bokeh_chart(fig)
     
@@ -287,39 +292,49 @@ if __name__ == '__main__':
     # data = hollow_downsampling(data, downsample_window=data_downsampling_window)
     # data = quantification(data, quantification_threshold)
     
+    data = data_connect
+    
     st.markdown('### Time Domain Data Compression and Quantification')
     
-    fig = figure(title='After doing connection', x_axis_label='Data Index', y_axis_label='Amplitude', width=800, height=400)
-    fig.line(range(len(data_connect)), data_connect, line_width=2)
+    fig = figure(title='After doing connection', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400)
+    time = np.linspace(0, len(data) / sampling_frequency, len(data))
+    fig.line(time, data, line_width=2)
     st.bokeh_chart(fig)
+    print(key_points_list)
     
-    data = data_connect
     data, key_points_list = data_compress(data, compress_ratio, key_points_list)
+    print(key_points_list)
     
     st.write('After data compress in time domain, we get the following signal:')
     
-    fig = figure(title='After Data Compress', x_axis_label='Data Index', y_axis_label='Amplitude', width=800, height=400)
-    fig.line(range(len(data)), data, line_width=2)
+    fig = figure(title='After Data Compress', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400)
+    time = np.linspace(0, len(data) / sampling_frequency, len(data)) / compress_ratio
+    fig.line(time, data, line_width=2)
     st.bokeh_chart(fig)
     
     data = quantification(data, quantification_threshold, key_points_list)
     
     st.write('After quantification, we get the following signal:')
     
-    fig = figure(title='After Quantification', x_axis_label='Data Index', y_axis_label='Amplitude', width=800, height=400)
-    fig.line(range(len(data)), data, line_width=2)
+    fig = figure(title='After Quantification', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400)
+    time = np.linspace(0, len(data) / sampling_frequency, len(data)) / compress_ratio
+    fig.line(time, data, line_width=2)
     st.bokeh_chart(fig)
     
     st.markdown('### Save the Result')
     st.write('Here\'s the final result, you can download the graph and save the data to a .csv file.')
     
-    fig = figure(title=f'{upload_file_name}', x_axis_label='Data Index', y_axis_label='Amplitude', width=800, height=400, y_range=(-40, 40))
-    _interval = len(data) // 5
-    _interval = _interval // 5 * 5
-    fig.xaxis.ticker = bokeh.models.tickers.SingleIntervalTicker(interval=_interval)
+    fig = figure(title=f'{upload_file_name}', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400, y_range=(-40, 40))
+    time = np.linspace(0, len(data) / sampling_frequency, len(data)) / compress_ratio
+    # _interval = len(data) // 2
+    # _interval = _interval // 2 * 2
+    # fig.xaxis.ticker = bokeh.models.tickers.SingleIntervalTicker(interval=_interval)
+    _interval = len(time) // 2 * 2
+    _interval = _interval // 2 * 2
+    fig.xaxis.ticker = bokeh.models.tickers.SingleIntervalTicker(interval=2)
     fig.grid.grid_line_color = 'Black'
     fig.grid.grid_line_alpha = 0.2
-    fig.line(range(len(data)), data, line_width=2, line_color='red')
+    fig.line(time, data, line_width=2, line_color='red')
     st.bokeh_chart(fig)
     
     
