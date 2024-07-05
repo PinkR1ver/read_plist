@@ -53,6 +53,7 @@ if __name__ == '__main__':
     if upload_file is None:
         
         upload_file = os.path.join(base_path, '12344_left_VOG_lefteye_Horizontal.plist')
+        upload_file_name = '12344_left_VOG_lefteye_Horizontal.plist'
         with open(upload_file, 'rb') as plist_file:
             data = plistlib.load(plist_file)
     
@@ -60,6 +61,7 @@ if __name__ == '__main__':
         
         bytes_data = upload_file.getvalue()
         data = plistlib.loads(bytes_data)
+        upload_file_name = upload_file.name
     
     st.markdown('### Original Signal')
     
@@ -94,8 +96,21 @@ if __name__ == '__main__':
     data_filtered = moving_average_filter(data, moving_average_window)
     data = data_filtered
     
-    fig = figure(title=f'{upload_file.name}', x_axis_label='Data Index', y_axis_label='Amplitude', width=800, height=400)
+    fig = figure(title='Signal After moving average filter', x_axis_label='Data Index', y_axis_label='Amplitude', width=800, height=400)
     fig.line(range(len(data)), data, line_width=2)
     st.bokeh_chart(fig)
+    
+    st.markdown('### Download Filtered Data')
+    st.write('Here\'s the final result')
+    
+    fig = figure(title=f'{upload_file_name}', x_axis_label='Data Index', y_axis_label='Amplitude', width=800, height=400, y_range=(-40, 40))
+    _interval = len(data) // 20
+    _interval = _interval // 10 * 10
+    fig.xaxis.ticker = bokeh.models.tickers.SingleIntervalTicker(interval=_interval)
+    fig.grid.grid_line_color = 'Black'
+    fig.grid.grid_line_alpha = 0.2
+    fig.line(range(len(data)), data, line_width=2, line_color='red')
+    st.bokeh_chart(fig)
+    
         
     
