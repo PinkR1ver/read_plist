@@ -38,9 +38,9 @@ if __name__ == '__main__':
         st.title('Control the filter parameters')
         
         sampling_frequency = st.slider('Sampling frequency', 0.0, 10000.0, 1000.0)
-        high_pass_cutoff = st.slider('High-pass filter cutoff frequency', 0.0, 100.0, 0.8)
+        high_pass_cutoff = st.slider('High-pass filter cutoff frequency', 0.0, 1000.0, 0.8)
         high_pass_order = st.slider('High-pass filter order', 1, 10, 5)
-        low_pass_cutoff = st.slider('Low-pass filter cutoff frequency', 0.0, 100.0, 50.0)
+        low_pass_cutoff = st.slider('Low-pass filter cutoff frequency', 0.0, 1000.0, 50.0)
         low_pass_order = st.slider('Low-pass filter order', 1, 10, 5)
         moving_average_window = st.slider('Moving average window size', 1, 100, 5)
     
@@ -94,7 +94,7 @@ if __name__ == '__main__':
     data_filtered = moving_average_filter(data, moving_average_window)
     data = data_filtered
     
-    fig = figure(title='Signal After moving average filter', x_axis_label='Data Index', y_axis_label='Amplitude', width=800, height=400)
+    fig = figure(title=f'{upload_file.name}', x_axis_label='Data Index', y_axis_label='Amplitude', width=800, height=400)
     fig.line(range(len(data)), data, line_width=2)
     st.bokeh_chart(fig)
         
