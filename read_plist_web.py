@@ -100,6 +100,13 @@ def get_key_points(data):
             
     key_points.append(len(data)-1)
     
+    first_derivative = np.diff(data)
+    second_derivative = np.diff(first_derivative)
+    
+    index = np.where((np.sign(second_derivative[:-1]) != np.sign(second_derivative[1:])) & (second_derivative[:-1] != 0) & (second_derivative[1:] != 0))[0] + 1
+    key_points = list(set(key_points + index.tolist()))
+    key_points.sort()
+    
     return key_points
     
 
@@ -152,17 +159,11 @@ def get_diff(data):
     
     return diff
 
-def data_compress(data, compressed_ratio):
+def data_compress(data, compressed_ratio, key_points_list):
     
-    key_points_cp = [(0, data[0])]
-    for i in range(1, len(data) - 1):
-        
-        if data[i] >= data[i-1] and data[i] >= data[i+1]:
-            key_points_cp.append((i, data[i]))
-        elif data[i] <= data[i-1] and data[i] <= data[i+1]:
-            key_points_cp.append((i, data[i]))
-    
-    key_points_cp.append((len(data)-1, data[-1]))
+    key_points_cp = []
+    for key_points in key_points_list:
+        key_points_cp.append((key_points, data[key_points]))
     
     for i in range(0, len(key_points_cp)):
         key_points_cp[i] = (int(key_points_cp[i][0] * compressed_ratio), key_points_cp[i][1])
@@ -195,10 +196,10 @@ if __name__ == '__main__':
         sampling_frequency = st.slider('Sampling frequency', 0.0, 10000.0, 1000.0)
         high_pass_cutoff = st.slider('High-pass filter cutoff frequency', 0.0, 1000.0, 0.8)
         high_pass_order = st.slider('High-pass filter order', 1, 10, 5)
-        low_pass_cutoff = st.slider('Low-pass filter cutoff frequency', 0.0, 1000.0, 50.0)
+        low_pass_cutoff = st.slider('Low-pass filter cutoff frequency', 0.0, 1000.0, 80.0)
         low_pass_order = st.slider('Low-pass filter order', 1, 10, 5)
         moving_average_window = st.slider('Moving average window size', 1, 100, 5)
-        compress_ratio = st.slider('Compress ratio', 0.0, 1.0, 0.1)
+        compress_ratio = st.slider('Compress ratio', 0.0, 1.0, 0.2)
         
     
 
@@ -284,7 +285,7 @@ if __name__ == '__main__':
     st.bokeh_chart(fig)
     
     data = data_connect
-    data = data_compress(data, compress_ratio)
+    data = data_compress(data, compress_ratio, key_points_list)
     
     fig = figure(title=f'{upload_file_name}', x_axis_label='Data Index', y_axis_label='Amplitude', width=800, height=400, y_range=(-40, 40))
     _interval = len(data) // 5
