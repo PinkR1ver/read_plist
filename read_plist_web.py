@@ -7,6 +7,9 @@ import bokeh.settings
 import bokeh
 import numpy as np
 from scipy import signal
+import pandas as pd
+from zipfile import ZipFile
+from io import BytesIO
 
 def moving_average_filter(data, window_size):
     window_size = int(window_size)
@@ -193,6 +196,64 @@ def data_compress(data, compressed_ratio, key_points_list):
     
     return data_cp, key_points_return
 
+
+def batch_processing(file_list):
+    
+    result_csv_list = []
+    fig_list = []
+    
+    progess_bar = st.progress(0, text='Processing...')
+    
+    for index, file in enumerate(file_list):
+        
+        bytes_data = file.getvalue()
+        data = plistlib.loads(bytes_data)
+            
+        data_filtered = butter_highpass_filter(data, high_pass_cutoff, sampling_frequency, high_pass_order)
+        data = data_filtered
+        
+        data_filtered = butter_lowpass_filter(data, low_pass_cutoff, sampling_frequency, low_pass_order)
+        data = data_filtered
+        
+        data_filtered = moving_average_filter(data, moving_average_window)
+        data = data_filtered
+        
+        key_points_list = get_key_points(data)
+        data_connect = data_connection(data, key_points_list)
+        
+        data, key_points_list = data_compress(data, compress_ratio, key_points_list)
+        
+        data = quantification(data, quantification_threshold, key_points_list)
+        
+        acc = np.diff(data)
+        acc = np.insert(acc, 0, 0)
+        
+        time = np.linspace(0, len(data) / sampling_frequency, len(data)) / compress_ratio
+        
+        result_csv = pd.DataFrame({'time': time, 'amplitude': data, 'acceleration': acc})
+        
+        fig = figure(title=f'{file.name}', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400, y_range=(-40, 40))
+        time = np.linspace(0, len(data) / sampling_frequency, len(data)) / compress_ratio
+        _interval = len(time) // 2 * 2
+        _interval = _interval // 2 * 2
+        fig.xaxis.ticker = bokeh.models.tickers.SingleIntervalTicker(interval=2)
+        fig.grid.grid_line_color = 'Black'
+        fig.grid.grid_line_alpha = 0.2
+        fig.line(time, data, line_width=2, line_color='red')
+        
+        # save the result (csv file name, csv_file) as a tuple to result_csv_list
+        result_csv_list.append((f'{file.name}.csv', result_csv))
+        fig_list.append((f'{file.name}.svg', fig))
+        
+        if index != len(file_list) - 1:
+            progess_bar.progress((index + 1) / len(file_list), text='Processing...')
+        else:
+            progess_bar.empty()
+    
+    return result_csv_list, fig_list 
+    
+        
+
 if __name__ == '__main__':
     
     base_path = os.path.dirname(__file__)
@@ -334,6 +395,35 @@ if __name__ == '__main__':
     fig.grid.grid_line_alpha = 0.2
     fig.line(time, data, line_width=2, line_color='red')
     st.bokeh_chart(fig)
+    
+    acc = np.diff(data)
+    acc = np.insert(acc, 0, 0)
+    
+    result_csv = pd.DataFrame({'time': time, 'amplitude': data, 'acceleration': acc})
+    st.download_button('Download the result as a CSV file', result_csv.to_csv(), 'result.csv', 'text/csv')
+    
+    st.markdown('### Batch Processing')
+    st.write('Above is example show, you can upload multiple files to process in batch.')
+    
+    upload_files = st.file_uploader('Upload multiple plist files', type=['plist'], accept_multiple_files=True)
+    
+    if upload_files:
+
+        result_csv_list, fig_list =  batch_processing(upload_files)
+        zipObj = ZipFile('result.zip', 'w')
+        for csv_name, csv_file in result_csv_list:
+            csv_file = csv_file.to_csv()
+            zipObj.writestr(csv_name, csv_file)
+        for fig_name, fig in fig_list:
+            fig_name = fig_name
+            fig.output_backend = 'svg'
+            bokeh.io.export_svgs(fig, filename=fig_name)
+            with open(fig_name, 'rb') as fig_file:
+                fig_data = fig_file.read()
+            zipObj.writestr(fig_name, fig_data)
+        zipObj.close()
+        st.download_button('Download the result as a ZIP file', open('result.zip', 'rb').read(), 'result.zip', 'application/zip')
+        
     
     
         
