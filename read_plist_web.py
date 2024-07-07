@@ -3,6 +3,7 @@ import os
 import plistlib
 import bokeh.core.properties
 from bokeh.plotting import figure
+from bokeh.io.export import get_svgs
 import bokeh.settings
 import bokeh
 import numpy as np
@@ -196,10 +197,11 @@ def data_compress(data, compressed_ratio, key_points_list):
     return data_cp, key_points_return
 
 
-def batch_processing(file_list):
+def batch_processing(file_list, sampling_frequency=50.0, high_pass_cutoff=0.1, high_pass_order=5, low_pass_cutoff=8.0, low_pass_order=5, moving_average_window=5, compress_ratio=0.2, quantification_threshold=0.5):
     
     result_csv_list = []
     fig_list = []
+    acc_fig_list = []
     
     progess_bar = st.progress(0, text='Processing...')
     
@@ -240,16 +242,29 @@ def batch_processing(file_list):
         fig.grid.grid_line_alpha = 0.2
         fig.line(time, data, line_width=2, line_color='red')
         
+        acc_fig = figure(title=f'{file.name}_acc', x_axis_label='Time(s)', y_axis_label='Acceleration', width=800, height=400, y_range=(-40, 40))
+        time = np.linspace(0, len(acc) / sampling_frequency, len(acc)) / compress_ratio
+        _interval = len(time) // 2 * 2
+        _interval = _interval // 2 * 2
+        acc_fig.xaxis.ticker = bokeh.models.tickers.SingleIntervalTicker(interval=2)
+        acc_fig.grid.grid_line_color = 'Black'
+        acc_fig.grid.grid_line_alpha = 0.2
+        acc_fig.line(time, acc, line_width=2, line_color='green')
+        
         # save the result (csv file name, csv_file) as a tuple to result_csv_list
         result_csv_list.append((f'{file.name}.csv', result_csv))
         fig_list.append((f'{file.name}.svg', fig))
+        acc_fig_list.append((f'{file.name}_acc.svg', acc_fig))
+        
         
         if index != len(file_list) - 1:
             progess_bar.progress((index + 1) / len(file_list), text='Processing...')
         else:
             progess_bar.empty()
+            
+    parameter_csv = pd.DataFrame({'sampling_frequency': [sampling_frequency], 'high_pass_cutoff': [high_pass_cutoff], 'high_pass_order': [high_pass_order], 'low_pass_cutoff': [low_pass_cutoff], 'low_pass_order': [low_pass_order], 'moving_average_window': [moving_average_window], 'compress_ratio': [compress_ratio], 'quantification_threshold': [quantification_threshold]})
     
-    return result_csv_list, fig_list 
+    return result_csv_list, fig_list, acc_fig_list, parameter_csv
     
         
 
@@ -413,18 +428,24 @@ if __name__ == '__main__':
         
         if upload_files:
 
-            result_csv_list, fig_list =  batch_processing(upload_files)
+            result_csv_list, fig_list, acc_fig_list, parameter_csv =  batch_processing(upload_files, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, compress_ratio, quantification_threshold)
             zipObj = ZipFile('result.zip', 'w')
             for csv_name, csv_file in result_csv_list:
                 csv_file = csv_file.to_csv()
                 zipObj.writestr(csv_name, csv_file)
-            # for fig_name, fig in fig_list:
-            #     fig_name = fig_name
-            #     fig.output_backend = 'svg'
-            #     bokeh.io.export_svgs(fig, filename=fig_name)
-            #     with open(fig_name, 'rb') as fig_file:
-            #         fig_data = fig_file.read()
-            #     zipObj.writestr(fig_name, fig_data)
+            zipObj.writestr('processing_parameter.csv', parameter_csv.to_csv())
+            for fig_name, fig in fig_list:
+                fig.output_backend = 'svg'
+                fig_data = get_svgs(fig)
+                fig_data = fig_data[0]
+                fig_data = fig_data.encode('utf-8')
+                zipObj.writestr(fig_name, fig_data)
+            for acc_fig_name, acc_fig in acc_fig_list:
+                acc_fig.output_backend = 'svg'
+                acc_fig_data = get_svgs(acc_fig)
+                acc_fig_data = acc_fig_data[0]
+                acc_fig_data = acc_fig_data.encode('utf-8')
+                zipObj.writestr(acc_fig_name, acc_fig_data)
             zipObj.close()
             st.download_button('Download the result as a ZIP file', open('result.zip', 'rb').read(), 'result.zip', 'application/zip')
             
