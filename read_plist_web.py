@@ -418,13 +418,13 @@ if __name__ == '__main__':
             for csv_name, csv_file in result_csv_list:
                 csv_file = csv_file.to_csv()
                 zipObj.writestr(csv_name, csv_file)
-            for fig_name, fig in fig_list:
-                fig_name = fig_name
-                fig.output_backend = 'svg'
-                bokeh.io.export_svgs(fig, filename=fig_name)
-                with open(fig_name, 'rb') as fig_file:
-                    fig_data = fig_file.read()
-                zipObj.writestr(fig_name, fig_data)
+            # for fig_name, fig in fig_list:
+            #     fig_name = fig_name
+            #     fig.output_backend = 'svg'
+            #     bokeh.io.export_svgs(fig, filename=fig_name)
+            #     with open(fig_name, 'rb') as fig_file:
+            #         fig_data = fig_file.read()
+            #     zipObj.writestr(fig_name, fig_data)
             zipObj.close()
             st.download_button('Download the result as a ZIP file', open('result.zip', 'rb').read(), 'result.zip', 'application/zip')
             
