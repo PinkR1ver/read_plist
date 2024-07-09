@@ -39,6 +39,58 @@ def average_downsample(data, window_size):
     data = data[::window_size]
     return data
 
+
+# def get_inflection_points(data):
+    
+#     inflection_points_index = np.zeros(len(data))
+#     data = np.array(data)
+#     for i in range(3, len(data)-3):
+#         flag = np.zeros(6)
+#         for index, j in enumerate([-3, -2, -1, 1 ,2, 3]):
+#             flag[index] = (data[i+j] > data[i])
+
+#         if flag.sum() == 6:
+#             inflection_points_index[i] = 1
+#         elif flag.sum() == 0:
+#             inflection_points_index[i] = -1
+    
+#     return inflection_points_index
+            
+
+# def inflection_points_connection(data, inflection_points_index):
+    
+#     inflection_high = 0
+#     inflection_low = 0
+#     inflection_list = []
+    
+#     for i in range(0, len(inflection_points_index)):
+#         if inflection_points_index[i] == 1 or inflection_points_index[i] == -1:
+#             inflection_list.append(i)
+#     inflection_list.append(len(data) - 1)
+
+#     data = np.array(data)
+#     data_connection = np.zeros(len(data))
+#     for i in range(0, len(data) - 1):
+#         if inflection_points_index[i] == 1:
+#             data_connection[i] = data[i]
+#             inflection_high = i
+#         elif inflection_points_index[i] == -1:
+#             data_connection[i] = data[i]
+#             inflection_low = i
+#         else:
+#             if i == 0:
+#                 data_connection[i] = data[i]
+#             elif i == len(data):
+#                 data_connection[i] = data[i]
+#             elif inflection_high > inflection_low:
+#                 inflection_tmp = inflection_list[inflection_list.index(inflection_high) + 1]
+#                 data_connection[i] = data[inflection_high] + (data[inflection_tmp] - data[inflection_high]) / (inflection_tmp - inflection_high) * (i - inflection_high)
+#             elif inflection_high < inflection_low:
+#                 inflection_tmp = inflection_list[inflection_list.index(inflection_low) + 1]
+#                 data_connection[i] = data[inflection_low] + (data[inflection_tmp] - data[inflection_low]) / (inflection_tmp - inflection_low) * (i - inflection_low)
+
+#     return data_connection
+
 def get_key_points(data):
     
     key_points = [0]
@@ -68,6 +120,30 @@ def data_connection(data, key_ponits_list):
         result[key_ponits_list[i-1]:key_ponits_list[i] + 1] = np.linspace(data[key_ponits_list[i-1]], data[key_ponits_list[i]], key_ponits_list[i] - key_ponits_list[i-1] + 1)
     
     return result
+
+# def hollow_downsampling(data, downsample_window=0):
+    
+#     if downsample_window == 0:
+        
+#         zero_interval = 0
+#         zero_interval_min = 99
+#         for i in range(len(data)):
+#             if data[i] == 0:
+#                 zero_interval += 1
+#             else:
+#                 zero_interval_min = min(zero_interval, zero_interval_min)
+#                 zero_interval = 0
+
+#         downsample_window = zero_interval_min
+    
+#     data_downsampled = []
+#     for i in range(0, len(data), downsample_window):
+#         if data[i:i+downsample_window].sum() == 0:
+#             data_downsampled.append(0)
+#         else:
+#             data_downsampled.append(data[i:i+downsample_window].sum())
+            
+#     return data_downsampled
 
 
 def quantification(data, threshold, key_points_list):
@@ -126,6 +202,8 @@ def batch_processing(file_list, sampling_frequency=50.0, high_pass_cutoff=0.1, h
     fig_list = []
     acc_fig_list = []
     
+    progess_bar = st.progress(0, text='Processing...')
+    
     for index, file in enumerate(file_list):
         
         bytes_data = file.getvalue()
@@ -176,6 +254,12 @@ def batch_processing(file_list, sampling_frequency=50.0, high_pass_cutoff=0.1, h
         result_csv_list.append((f'{file.name}.csv', result_csv))
         fig_list.append((f'{file.name}.svg', fig))
         acc_fig_list.append((f'{file.name}_acc.svg', acc_fig))
+        
+        
+        if index != len(file_list) - 1:
+            progess_bar.progress((index + 1) / len(file_list), text='Processing...')
+        else:
+            progess_bar.empty()
             
     parameter_csv = pd.DataFrame({'sampling_frequency': [sampling_frequency], 'high_pass_cutoff': [high_pass_cutoff], 'high_pass_order': [high_pass_order], 'low_pass_cutoff': [low_pass_cutoff], 'low_pass_order': [low_pass_order], 'moving_average_window': [moving_average_window], 'compress_ratio': [compress_ratio], 'quantification_threshold': [quantification_threshold]})
     
@@ -263,11 +347,27 @@ if __name__ == '__main__':
         fig.line(time, data, line_width=2)
         st.bokeh_chart(fig)
         
+        # st.markdown('### Get the Derivative of the Signal')
+        # st.write('We get the derivative of the signal to get the acceleration')
+        
+        # diff = get_diff(data)
+        
+        # fig = figure(title='Derivative of the Signal', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400)
+        # fig.line(range(len(diff)), diff, line_width=2)
+        # st.bokeh_chart(fig)
+        
         st.markdown('### Key Point Detection and Connection')
         st.write('Here\'s the final result, we did the key point detection and use straight line to connect them')
         
+        # data = average_downsample(data, data_downsampling_window)
         key_points_list = get_key_points(data)
         data_connect = data_connection(data, key_points_list)
+        
+        # inflection_points_index = get_inflection_points(data)
+        # data = inflection_points_connection(data, inflection_points_index)
+        
+        # data = hollow_downsampling(data, downsample_window=data_downsampling_window)
+        # data = quantification(data, quantification_threshold)
         
         data = data_connect
         
@@ -301,7 +401,9 @@ if __name__ == '__main__':
         
         fig = figure(title=f'{upload_file_name}', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400, y_range=(-40, 40))
         time = np.linspace(0, len(data) / sampling_frequency, len(data)) / compress_ratio
-
+        # _interval = len(data) // 2
+        # _interval = _interval // 2 * 2
+        # fig.xaxis.ticker = bokeh.models.tickers.SingleIntervalTicker(interval=_interval)
         _interval = len(time) // 2 * 2
         _interval = _interval // 2 * 2
         fig.xaxis.ticker = bokeh.models.tickers.SingleIntervalTicker(interval=2)
@@ -325,9 +427,7 @@ if __name__ == '__main__':
         
         if upload_files:
 
-            progress_bar = st.progress(0, text='Processing...')
             result_csv_list, fig_list, acc_fig_list, parameter_csv =  batch_processing(upload_files, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, compress_ratio, quantification_threshold)
-            progress_bar.progress(25, 'Saving...')
             zipObj = ZipFile('result.zip', 'w')
             for csv_name, csv_file in result_csv_list:
                 csv_file = csv_file.to_csv()
@@ -346,7 +446,6 @@ if __name__ == '__main__':
                 acc_fig_data = acc_fig_data.encode('utf-8')
                 zipObj.writestr(acc_fig_name, acc_fig_data)
             zipObj.close()
-            progress_bar.progress(100, 'Done!')
             st.download_button('Download the result as a ZIP file', open('result.zip', 'rb').read(), 'result.zip', 'application/zip')
             
     
