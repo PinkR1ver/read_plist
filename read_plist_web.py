@@ -11,6 +11,10 @@ from scipy import signal
 import pandas as pd
 from zipfile import ZipFile
 from io import BytesIO
+from webdriver_manager.chrome import ChromeDriverManager
+
+driver_path = ChromeDriverManager().install()
+os.environ["BOKEH_CHROMEDRIVER_PATH"] = driver_path
 
 def moving_average_filter(data, window_size):
     window_size = int(window_size)
