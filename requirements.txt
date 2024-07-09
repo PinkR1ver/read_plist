@@ -80,6 +80,7 @@ Pygments==2.17.2
 pyparsing==3.1.1
 PySocks==1.7.1
 python-dateutil==2.8.2
+python-dotenv==1.0.1
 pytz==2024.1
 pywin32-ctypes==0.2.2
 PyYAML==6.0.1
@@ -120,6 +121,7 @@ tzdata==2024.1
 urllib3==2.2.1
 watchdog==4.0.1
 wcwidth==0.2.13
+webdriver-manager==4.0.1
 websocket-client==1.8.0
 wheel==0.41.2
 wsproto==1.2.0
