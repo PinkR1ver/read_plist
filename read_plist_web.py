@@ -324,29 +324,32 @@ if __name__ == '__main__':
         upload_files = st.file_uploader('Upload multiple plist files', type=['plist'], accept_multiple_files=True)
         
         if upload_files:
-
-            progress_bar = st.progress(0, text='Processing...')
-            result_csv_list, fig_list, acc_fig_list, parameter_csv =  batch_processing(upload_files, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, compress_ratio, quantification_threshold)
-            progress_bar.progress(25, 'Saving...')
-            zipObj = ZipFile('result.zip', 'w')
-            for csv_name, csv_file in result_csv_list:
-                csv_file = csv_file.to_csv()
-                zipObj.writestr(csv_name, csv_file)
-            zipObj.writestr('processing_parameter.csv', parameter_csv.to_csv())
-            for fig_name, fig in fig_list:
-                fig.output_backend = 'svg'
-                fig_data = get_svgs(fig)
-                fig_data = fig_data[0]
-                fig_data = fig_data.encode('utf-8')
-                zipObj.writestr(fig_name, fig_data)
-            for acc_fig_name, acc_fig in acc_fig_list:
-                acc_fig.output_backend = 'svg'
-                acc_fig_data = get_svgs(acc_fig)
-                acc_fig_data = acc_fig_data[0]
-                acc_fig_data = acc_fig_data.encode('utf-8')
-                zipObj.writestr(acc_fig_name, acc_fig_data)
-            zipObj.close()
-            progress_bar.progress(100, 'Done!')
+            
+            if 'upload_files' not in st.session_state or st.session_state.upload_files != upload_files:
+                st.session_state.upload_files = upload_files
+                
+                progress_bar = st.progress(0, text='Processing...')
+                result_csv_list, fig_list, acc_fig_list, parameter_csv =  batch_processing(upload_files, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, compress_ratio, quantification_threshold)
+                progress_bar.progress(25, 'Saving...')
+                zipObj = ZipFile('result.zip', 'w')
+                for csv_name, csv_file in result_csv_list:
+                    csv_file = csv_file.to_csv()
+                    zipObj.writestr(csv_name, csv_file)
+                zipObj.writestr('processing_parameter.csv', parameter_csv.to_csv())
+                for fig_name, fig in fig_list:
+                    fig.output_backend = 'svg'
+                    fig_data = get_svgs(fig)
+                    fig_data = fig_data[0]
+                    fig_data = fig_data.encode('utf-8')
+                    zipObj.writestr(fig_name, fig_data)
+                for acc_fig_name, acc_fig in acc_fig_list:
+                    acc_fig.output_backend = 'svg'
+                    acc_fig_data = get_svgs(acc_fig)
+                    acc_fig_data = acc_fig_data[0]
+                    acc_fig_data = acc_fig_data.encode('utf-8')
+                    zipObj.writestr(acc_fig_name, acc_fig_data)
+                zipObj.close()
+                progress_bar.progress(100, 'Done!')
             st.download_button('Download the result as a ZIP file', open('result.zip', 'rb').read(), 'result.zip', 'application/zip')
             
     
