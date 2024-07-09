@@ -1,5 +1,4 @@
 build-essential
 pkg-config
 default-libmysqlclient-dev
-chromium-browser
 chromium-chromedriver
