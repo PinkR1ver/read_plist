@@ -1,4 +1,4 @@
 build-essential
 pkg-config
 default-libmysqlclient-dev
-chromium-chromedriver
+firefox-geckodriver
