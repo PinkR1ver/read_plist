@@ -493,7 +493,7 @@ if __name__ == '__main__':
         st.title('Enhanced Saccadic Wave')
         st.write('This is a simple example of calculating the enhanced saccadic wave from the head and eye movement data.')
         
-        st.markdown('### Upload the head movement data and eye movement data')
+        st.markdown('### Upload the head movement data')
         head_file = st.file_uploader('Upload the head movement data', type=['plist'])
         
         st.markdown('### Upload the eye movement data')
