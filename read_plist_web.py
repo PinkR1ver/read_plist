@@ -184,10 +184,125 @@ def batch_processing(file_list, sampling_frequency=50.0, high_pass_cutoff=0.1, h
         except Exception as e:
             
             error_list.append((file.name, e))
+    
+    couple_list = []
+    esw_fig_list = []
+    
+    for index, file in enumerate(file_list):
+        
+        name = file.name
+        label = name.split('_')[0]
+        
+        if 'pHIT' in name:
+            if 'lefteye' in name:
+                couple_list.append((label, 'lefteye', index))
+            elif 'head' in name:
+                couple_list.append((label, 'head', index))
+                
+    for i in range(len(couple_list) - 1):
+        
+        for j in range(i + 1, len(couple_list)):
+            
+            if couple_list[i][0] == couple_list[j][0]:
+                
+                if couple_list[i][1] == 'head':
+                    head_file = file_list[couple_list[i][2]]
+                    eye_file = file_list[couple_list[j][2]]
+                else:
+                    head_file = file_list[couple_list[j][2]]
+                    eye_file = file_list[couple_list[i][2]]
+                
+                label = couple_list[i][0]
+                
+                try:
+                    
+                    esw, t, head_data, eye_data = enhanced_saccadic_wave(head_file, eye_file, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, compress_ratio, quantification_threshold)
+                    esw_fig = figure(title=f'{label} Enhanced Saccadic Wave', x_axis_label='Time(s)', y_axis_label='Enhanced Saccadic Wave', width=800, height=400)
+                    esw_fig.line(t, head_data, line_width=2, color='orange', legend_label='Head Movement')
+                    esw_fig.line(t, eye_data, line_width=2, color='green', legend_label='Eye Movement')
+                    esw_fig.line(t, esw, line_width=2, color='red', legend_label='Enhanced Saccadic Wave')
+                    esw_fig_list.append((f'{label}_esw.svg', esw_fig))
+                    
+                except Exception as e:
+                    
+                    error_list.append((label, e))
             
     parameter_csv = pd.DataFrame({'sampling_frequency': [sampling_frequency], 'high_pass_cutoff': [high_pass_cutoff], 'high_pass_order': [high_pass_order], 'low_pass_cutoff': [low_pass_cutoff], 'low_pass_order': [low_pass_order], 'moving_average_window': [moving_average_window], 'compress_ratio': [compress_ratio], 'quantification_threshold': [quantification_threshold]})
     
-    return result_csv_list, fig_list, acc_fig_list, parameter_csv, error_list
+    return result_csv_list, fig_list, acc_fig_list, esw_fig_list, parameter_csv, error_list
+
+
+def enhanced_saccadic_wave(head_file, eye_file, sampling_frequency=50.0, high_pass_cutoff=0.1, high_pass_order=5, low_pass_cutoff=8.0, low_pass_order=5, moving_average_window=5, compress_ratio=0.2, quantification_threshold=0.5):
+    
+    try: 
+        
+        bytes_data = head_file.getvalue()
+        head_data = plistlib.loads(bytes_data)
+        
+        bytes_data = eye_file.getvalue()
+        eye_data = plistlib.loads(bytes_data)
+        
+        data = head_data
+        
+        data_filtered = butter_highpass_filter(data, high_pass_cutoff, sampling_frequency, high_pass_order)
+        data = data_filtered
+        
+        data_filtered = butter_lowpass_filter(data, low_pass_cutoff, sampling_frequency, low_pass_order)
+        data = data_filtered
+        
+        data_filtered = moving_average_filter(data, moving_average_window)
+        data = data_filtered
+        
+        key_points_list = get_key_points(data)
+        data_connect = data_connection(data, key_points_list)
+        
+        data, key_points_list = data_compress(data, compress_ratio, key_points_list)
+        
+        data = quantification(data, quantification_threshold, key_points_list)
+        
+        head_speed = np.diff(data)
+        head_data = data
+        
+        data = eye_data
+        
+        data_filtered = butter_highpass_filter(data, high_pass_cutoff, sampling_frequency, high_pass_order)
+        data = data_filtered
+        
+        data_filtered = butter_lowpass_filter(data, low_pass_cutoff, sampling_frequency, low_pass_order)
+        data = data_filtered
+        
+        data_filtered = moving_average_filter(data, moving_average_window)
+        data = data_filtered
+        
+        key_points_list = get_key_points(data)
+        data_connect = data_connection(data, key_points_list)
+        
+        data, key_points_list = data_compress(data, compress_ratio, key_points_list)
+        
+        data = quantification(data, quantification_threshold, key_points_list)
+        
+        eye_speed = np.diff(data)
+        eye_data = data
+        
+        enhanced_saccadic_wave = []
+        for i in range(0, len(head_speed)):
+            if head_speed[i] != 0:
+                enhanced_saccadic_wave.append(eye_speed[i] / head_speed[i])
+            else:
+                enhanced_saccadic_wave.append(0)
+                
+        enhanced_saccadic_wave.insert(0, 0)
+        enhanced_saccadic_wave = np.array(enhanced_saccadic_wave)
+        
+        t = np.linspace(0, len(enhanced_saccadic_wave) / sampling_frequency, len(enhanced_saccadic_wave))
+        
+        return enhanced_saccadic_wave, t, head_data, eye_data
+    
+    except Exception as e:
+        
+        return None, e, None, None
+    
+    
     
         
 
@@ -197,7 +312,7 @@ if __name__ == '__main__':
 
     with st.sidebar:
         
-        mode = st.selectbox('Select the mode', ['Example: Single File Processing Procedures Detail', 'Batch Processing'], index=0)
+        mode = st.selectbox('Select the mode', ['Example: Single File Processing Procedures Detail', 'Batch Processing', 'Enhanced Saccadic Wave'], index=0)
         
         st.title('Control the filter parameters')
         
@@ -234,7 +349,7 @@ if __name__ == '__main__':
         st.markdown('### Original Signal')
         
         # plot original signal
-        fig = figure(title='Original Signal', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400)
+        fig = figure(title='Original Signal', x_axis_label='Index', y_axis_label='Amplitude', width=800, height=400)
         fig.line(range(len(data)), data, line_width=2)
         st.bokeh_chart(fig)
         
@@ -337,7 +452,7 @@ if __name__ == '__main__':
                 st.session_state.upload_files = upload_files
                 
                 progress_bar = st.progress(0, text='Processing...')
-                result_csv_list, fig_list, acc_fig_list, parameter_csv, error_list =  batch_processing(upload_files, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, compress_ratio, quantification_threshold)
+                result_csv_list, fig_list, acc_fig_list, esw_fig_list, parameter_csv, error_list =  batch_processing(upload_files, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, compress_ratio, quantification_threshold)
                 progress_bar.progress(25, 'Saving...')
                 zipObj = ZipFile('result.zip', 'w')
                 for csv_name, csv_file in result_csv_list:
@@ -358,6 +473,13 @@ if __name__ == '__main__':
                     acc_fig_data = acc_fig_data[0]
                     acc_fig_data = acc_fig_data.encode('utf-8')
                     zipObj.writestr(acc_fig_name, acc_fig_data)
+                    
+                for esw_fig_name, esw_fig in esw_fig_list:
+                    esw_fig.output_backend = 'svg'
+                    esw_fig_data = get_svgs(esw_fig)
+                    esw_fig_data = esw_fig_data[0]
+                    esw_fig_data = esw_fig_data.encode('utf-8')
+                    zipObj.writestr(esw_fig_name, esw_fig_data)
                 
                 error_list = pd.DataFrame(error_list, columns=['file_name', 'error'])
                 zipObj.writestr('error_list.csv', error_list.to_csv())
@@ -365,6 +487,37 @@ if __name__ == '__main__':
                 zipObj.close()
                 progress_bar.progress(100, 'Done!')
             st.download_button('Download the result as a ZIP file', open('result.zip', 'rb').read(), 'result.zip', 'application/zip')
+            
+    if mode == 'Enhanced Saccadic Wave':
+        
+        st.title('Enhanced Saccadic Wave')
+        st.write('This is a simple example of calculating the enhanced saccadic wave from the head and eye movement data.')
+        
+        st.markdown('### Upload the head movement data and eye movement data')
+        head_file = st.file_uploader('Upload the head movement data', type=['plist'])
+        
+        st.markdown('### Upload the eye movement data')
+        eye_file = st.file_uploader('Upload the eye movement data', type=['plist'])
+        
+        if head_file and eye_file:
+            
+            progress_bar = st.progress(0, text='Processing...')
+            
+            esw, t, head_data, eye_data = enhanced_saccadic_wave(head_file, eye_file, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, compress_ratio, quantification_threshold)
+            
+            progress_bar.progress(100, 'Done!')
+            
+            if esw is not None:
+                
+                fig = figure(title='Enhanced Saccadic Wave', x_axis_label='Time(s)', y_axis_label='Enhanced Saccadic Wave', width=800, height=400)
+                fig.line(t, head_data, line_width=2, color='orange', legend_label='Head Movement')
+                fig.line(t, eye_data, line_width=2, color='green', legend_label='Eye Movement')
+                fig.line(t, esw, line_width=2, color='red', legend_label='Enhanced Saccadic Wave')
+                st.bokeh_chart(fig)
+                
+            else:
+                
+                st.write('Error occurred during the processing.')
             
     
     

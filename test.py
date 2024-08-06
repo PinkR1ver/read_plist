@@ -1,16 +1,24 @@
-import streamlit as st
-from bokeh.plotting import figure
+import flet as ft
 
+class MyButton(ft.ElevatedButton):
+    def __init__(self, text, on_click):
+        super().__init__()
+        self.bgcolor = ft.colors.ORANGE_300
+        self.color = ft.colors.GREEN_800
+        self.text = text
+        self.on_click = on_click
 
-if "p" not in st.session_state:
-    st.session_state["p"] = 0.5
+def main(page: ft.Page):
 
-st.subheader("Bernoulli Distribution")
+    def ok_clicked(e):
+        print("OK clicked")
+    
+    def cancel_clicked(e):
+        print("Cancel clicked")
 
-p = st.slider("Probability of Success (p)", 0.0, 1.0, 0.5, key="p")
-x = [0, 1]
-y = [1 - p, p]
+    page.add(
+        MyButton(text="OK", on_click=ok_clicked),
+        MyButton(text="Cancel", on_click=cancel_clicked),
+    )
 
-fig = figure(title='Bernoulli Distribution', x_axis_label='Outcome', y_axis_label='Probability')
-fig.vbar(x=x, top=y, width=0.5)
-st.bokeh_chart(fig, use_container_width=True)
+ft.app(target=main)
