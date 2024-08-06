@@ -454,7 +454,7 @@ if __name__ == '__main__':
                 st.session_state.upload_files = upload_files
                 
                 progress_bar = st.progress(0, text='Processing...')
-                result_csv_list, fig_list, acc_fig_list, esw_fig_list, parameter_csv, error_list =  batch_processing(upload_files, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, compress_ratio, quantification_threshold)
+                result_csv_list, fig_list, acc_fig_list, esw_fig_list, parameter_csv, error_list =  batch_processing(upload_files, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, compress_ratio, quantification_threshold, y_axis_range_positive, y_axis_range_negative)
                 progress_bar.progress(25, 'Saving...')
                 zipObj = ZipFile('result.zip', 'w')
                 for csv_name, csv_file in result_csv_list:
