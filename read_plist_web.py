@@ -120,7 +120,7 @@ def data_compress(data, compressed_ratio, key_points_list):
     return data_cp, key_points_return
 
 
-def batch_processing(file_list, sampling_frequency=50.0, high_pass_cutoff=0.1, high_pass_order=5, low_pass_cutoff=8.0, low_pass_order=5, moving_average_window=5, compress_ratio=0.2, quantification_threshold=0.5):
+def batch_processing(file_list, sampling_frequency=50.0, high_pass_cutoff=0.1, high_pass_order=5, low_pass_cutoff=8.0, low_pass_order=5, moving_average_window=5, compress_ratio=0.2, quantification_threshold=0.5, y_axis_range_positive=15, y_axis_range_negative=-15):
     
     
     result_csv_list = []
@@ -158,7 +158,7 @@ def batch_processing(file_list, sampling_frequency=50.0, high_pass_cutoff=0.1, h
             
             result_csv = pd.DataFrame({'time': time, 'amplitude': data, 'acceleration': acc})
             
-            fig = figure(title=f'{file.name}', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400, y_range=(-40, 40))
+            fig = figure(title=f'{file.name}', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400, y_range=(y_axis_range_negative, y_axis_range_positive))
             time = np.linspace(0, len(data) / sampling_frequency, len(data)) / compress_ratio
             _interval = len(time) // 2 * 2
             _interval = _interval // 2 * 2
@@ -167,7 +167,7 @@ def batch_processing(file_list, sampling_frequency=50.0, high_pass_cutoff=0.1, h
             fig.grid.grid_line_alpha = 0.2
             fig.line(time, data, line_width=2, line_color='red')
             
-            acc_fig = figure(title=f'{file.name}_acc', x_axis_label='Time(s)', y_axis_label='Acceleration', width=800, height=400, y_range=(-40, 40))
+            acc_fig = figure(title=f'{file.name}_acc', x_axis_label='Time(s)', y_axis_label='Acceleration', width=800, height=400, y_range=(y_axis_range_positive, y_axis_range_negative))
             time = np.linspace(0, len(acc) / sampling_frequency, len(acc)) / compress_ratio
             _interval = len(time) // 2 * 2
             _interval = _interval // 2 * 2
@@ -324,6 +324,8 @@ if __name__ == '__main__':
         moving_average_window = st.slider('Moving average window size', 1, 100, 5)
         compress_ratio = st.slider('Compress ratio', 0.0, 1.0, 0.2, step=0.05)
         quantification_threshold = st.slider('Quantification threshold', 0.0, 4.0, 0.5)
+        y_axis_range_positive = st.slider('Y positve axis range', -40, 40, 10)
+        y_axis_range_negative = st.slider('Y negative axis range', -40, 40, -10)
         
     
     if mode == 'Example: Single File Processing Procedures Detail':
@@ -422,7 +424,7 @@ if __name__ == '__main__':
         st.markdown('### Save the Result')
         st.write('Here\'s the final result, you can download the graph and save the data to a .csv file.')
         
-        fig = figure(title=f'{upload_file_name}', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400, y_range=(-40, 40))
+        fig = figure(title=f'{upload_file_name}', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400, y_range=(y_axis_range_negative, y_axis_range_positive))
         time = np.linspace(0, len(data) / sampling_frequency, len(data)) / compress_ratio
 
         _interval = len(time) // 2 * 2
