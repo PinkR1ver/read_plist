@@ -307,8 +307,201 @@ def enhanced_saccadic_wave(head_file, eye_file, sampling_frequency=50.0, high_pa
         return None, e, None, None
     
     
+
+def enhanced_saccadic_wave_v2(head_file, eye_file, sampling_frequency=50.0, high_pass_cutoff=0.1, high_pass_order=5, low_pass_cutoff=8.0, low_pass_order=5, moving_average_window=5, quantification_threshold=0.1):
     
+        try: 
         
+            bytes_data = head_file.getvalue()
+            head_data = plistlib.loads(bytes_data)
+            
+            bytes_data = eye_file.getvalue()
+            eye_data = plistlib.loads(bytes_data)
+            
+            data = head_data
+            
+            data_filtered = butter_highpass_filter(data, high_pass_cutoff, sampling_frequency, high_pass_order)
+            data = data_filtered
+            
+            data_filtered = butter_lowpass_filter(data, low_pass_cutoff, sampling_frequency, low_pass_order)
+            data = data_filtered
+            
+            data_filtered = moving_average_filter(data, moving_average_window)
+            data = data_filtered
+            
+            # key_points_list = get_key_points(data)
+            # data_connect = data_connection(data, key_points_list)
+            
+            # data = data_connect
+            
+            # data, key_points_list = data_compress(data, compress_ratio, key_points_list)
+            
+            data = quantification(data, quantification_threshold)
+            
+            head_speed = np.diff(data)
+            head_data = data
+            
+            data = eye_data
+            
+            data_filtered = butter_highpass_filter(data, high_pass_cutoff, sampling_frequency, high_pass_order)
+            data = data_filtered
+            
+            data_filtered = butter_lowpass_filter(data, low_pass_cutoff, sampling_frequency, low_pass_order)
+            data = data_filtered
+            
+            data_filtered = moving_average_filter(data, moving_average_window)
+            data = data_filtered
+            
+            # key_points_list = get_key_points(data)
+            # data_connect = data_connection(data, key_points_list)
+            
+            # data = data_connect
+            
+            # data, key_points_list = data_compress(data, compress_ratio, key_points_list)
+            
+            data = quantification(data, quantification_threshold)
+            
+            eye_speed = np.diff(data)
+            eye_data = data
+            
+            
+            
+        except Exception as e:
+            
+            return None, e, None, None
+
+
+def speed_filter(data, threshold=0.4):
+    
+    data_cp = data.copy()
+    speed = np.diff(data)
+    speed = np.insert(speed, 0, 0)
+    
+    key_idx = []
+    key_idx_right = []
+    key_idx_left = []
+    
+    for i in range(1, len(data_cp) - 1):
+        if data_cp[i] > data_cp[i-1] and data_cp[i] > data_cp[i+1]:
+            if speed[i] > threshold:
+                key_idx_right.append(i)
+        elif data_cp[i] < data_cp[i-1] and data_cp[i] < data_cp[i+1]:
+            if speed[i] < -threshold:
+                key_idx_left.append(i)
+            
+    key_idx.append(key_idx_right)
+    key_idx.append(key_idx_left)
+    
+    return key_idx
+
+
+def test_function(head_file, eye_file, sampling_frequency=50.0, high_pass_cutoff=0.1, high_pass_order=5, low_pass_cutoff=8.0, low_pass_order=5, moving_average_window=5, quantification_threshold=0.1):
+
+        mov_data = [0, 0]
+        for index, file in enumerate([head_file, eye_file]):
+            bytes_data = file.getvalue()
+            data = plistlib.loads(bytes_data)
+            
+            data_filtered = butter_highpass_filter(data, high_pass_cutoff, sampling_frequency, high_pass_order)
+            data = data_filtered
+            
+            data_filtered = butter_lowpass_filter(data, low_pass_cutoff, sampling_frequency, low_pass_order)
+            data = data_filtered
+        
+            data_filtered = moving_average_filter(data, moving_average_window)
+            mov_data[index] = data_filtered
+            
+        head_data = mov_data[0]
+        eye_data = mov_data[1]
+        
+        head_speed = np.diff(head_data)
+        head_speed = np.insert(head_speed, 0, 0)
+        
+        eye_speed = np.diff(eye_data)
+        eye_speed = np.insert(eye_speed, 0, 0)
+        
+        key_idx = speed_filter(head_data)
+        key_speed_right = head_speed[key_idx[0]]
+        key_speed_left = head_speed[key_idx[1]]
+        
+        speed_df_right = pd.DataFrame({'speed_right':key_speed_right})
+        speed_df_left = pd.DataFrame({'speed_left':key_speed_left})
+        
+        st.dataframe(speed_df_right)
+        st.dataframe(speed_df_left)
+        
+        window_size = 25
+        
+        fig = figure(title='Movement Signal', x_axis_label='Time(s)', y_axis_label='Amplitidue', width=800, height=400)
+        time = np.linspace(0, len(head_data) / sampling_frequency, len(head_data))
+        fig.line(time, head_data, line_width=2, color='orange', legend_label='Head Movement')
+        fig.line(time, eye_data, line_width=2, color='green', legend_label='Eye Movement')
+        st.bokeh_chart(fig)
+        
+        fig = figure(title='Enhanced Saccadic Wave', x_axis_label='Time(s)', y_axis_label='Speed', width=800, height=400)
+        time = np.linspace(0, window_size * 2 / sampling_frequency, window_size * 2)
+        for i in range(0, len(key_idx[0])):
+            fig.line(time, head_speed[key_idx[0][i] - window_size:key_idx[0][i] + window_size], line_width=2, color='orange', legend_label='Head Speed')
+        for i in range(0, len(key_idx[1])):
+            fig.line(time, -head_speed[key_idx[1][i] - window_size:key_idx[1][i] + window_size], line_width=2, color='orange', legend_label='Head Speed')
+        for i in range(0, len(key_idx[0])):
+            fig.line(time, -eye_speed[key_idx[0][i] - window_size:key_idx[0][i] + window_size], line_width=2, color='green', legend_label='Eye Speed')
+        for i in range(0, len(key_idx[1])):
+            fig.line(time, eye_speed[key_idx[1][i] - window_size:key_idx[1][i] + window_size], line_width=2, color='green', legend_label='Eye Speed')
+        st.bokeh_chart(fig)
+        
+        esw_speed = []
+        for i in range(0, len(key_idx[0])):
+            esw_speed_element = np.zeros(window_size * 2)
+            for j in range(0, window_size * 2):
+                if head_speed[key_idx[0][i] - window_size + j] != 0:
+                    esw_speed_element[j] = -eye_speed[key_idx[0][i] - window_size + j] / head_speed[key_idx[0][i] - window_size + j]
+                else:
+                    esw_speed_element[j] = 0
+            esw_speed.append(esw_speed_element)
+        for i in range(0, len(key_idx[1])):
+            esw_speed_element = np.zeros(window_size * 2)
+            for j in range(0, window_size * 2):
+                if head_speed[key_idx[1][i] - window_size + j] != 0 and (head_speed[key_idx[1][i] - window_size + j] > 1 or eye_speed[key_idx[1][i] - window_size + j] > 1):
+                    esw_speed_element[j] = -eye_speed[key_idx[1][i] - window_size + j] / head_speed[key_idx[1][i] - window_size + j]
+                else:
+                    esw_speed_element[j] = 0
+            esw_speed.append(esw_speed_element)
+                
+        
+        fig = figure(title='Enhanced Saccadic Wave', x_axis_label='Time(s)', y_axis_label='Speed', width=800, height=400, y_range=(-3, 3))
+        time = np.linspace(0, window_size * 2 / sampling_frequency, window_size * 2)
+        for i in range(0, len(key_idx[0])):
+            fig.line(time, head_speed[key_idx[0][i] - window_size:key_idx[0][i] + window_size], line_width=2, color='orange', legend_label='Head Speed')
+        for i in range(0, len(key_idx[1])):
+            fig.line(time, -head_speed[key_idx[1][i] - window_size:key_idx[1][i] + window_size], line_width=2, color='orange', legend_label='Head Speed')
+        for i in range(0, len(key_idx[0])):
+            fig.line(time, -eye_speed[key_idx[0][i] - window_size:key_idx[0][i] + window_size], line_width=2, color='green', legend_label='Eye Speed')
+        for i in range(0, len(key_idx[1])):
+            fig.line(time, eye_speed[key_idx[1][i] - window_size:key_idx[1][i] + window_size], line_width=2, color='green', legend_label='Eye Speed')
+        for i in range(0, len(esw_speed)):
+            fig.line(time, esw_speed[i], line_width=2, color='red', legend_label='Enhanced Saccadic Wave')
+        st.bokeh_chart(fig)
+        for i in range(0, len(key_idx[0])):
+            
+            fig = figure(title=f'Right Speed {head_speed[key_idx[0][i]]}, head movement filter', x_axis_label='Time(s)', y_axis_label='Amplitidue', width=800, height=400)
+            time = np.linspace(0, window_size * 2 / sampling_frequency, window_size * 2)
+            head_signal = head_data[key_idx[0][i] - window_size:key_idx[0][i] + window_size]
+            eye_signal = eye_data[key_idx[0][i] - window_size:key_idx[0][i] + window_size]
+            fig.line(time, head_signal, line_width=2, color='orange')
+            fig.line(time, eye_signal, line_width=2, color='green')
+            st.bokeh_chart(fig)
+            
+        for i in range(0, len(key_idx[1])):
+            
+            fig = figure(title=f'Right Speed {head_speed[key_idx[1][i]]}, head movement filter', x_axis_label='Time(s)', y_axis_label='Amplitidue', width=800, height=400)
+            time = np.linspace(0, window_size * 2 / sampling_frequency, window_size * 2)
+            head_signal = head_data[key_idx[1][i] - window_size:key_idx[1][i] + window_size]
+            eye_signal = eye_data[key_idx[1][i] - window_size:key_idx[1][i] + window_size]
+            fig.line(time, head_signal, line_width=2, color='orange')
+            fig.line(time, eye_signal, line_width=2, color='green')
+            st.bokeh_chart(fig)
+    
 
 if __name__ == '__main__':
     
@@ -316,7 +509,7 @@ if __name__ == '__main__':
 
     with st.sidebar:
         
-        mode = st.selectbox('Select the mode', ['Example: Single File Processing Procedures Detail', 'Batch Processing', 'Enhanced Saccadic Wave'], index=0)
+        mode = st.selectbox('Select the mode', ['Example: Single File Processing Procedures Detail', 'Batch Processing', 'Enhanced Saccadic Wave', 'test mode'], index=0)
         
         st.title('Control the filter parameters')
         
@@ -519,14 +712,17 @@ if __name__ == '__main__':
                 fig = figure(title='Enhanced Saccadic Wave', x_axis_label='Time(s)', y_axis_label='Enhanced Saccadic Wave', width=800, height=400)
                 fig.line(t, head_data, line_width=2, color='orange', legend_label='Head Movement')
                 fig.line(t, eye_data, line_width=2, color='green', legend_label='Eye Movement')
-                fig.line(t, esw, line_width=2, color='red', legend_label='Enhanced Saccadic Wave')
+                # fig.line(t, esw, line_width=2, color='red', legend_label='Enhanced Saccadic Wave')
                 st.bokeh_chart(fig)
                 
             else:
                 
                 st.write('Error occurred during the processing.')
-            
-    
-    
+                
+    if mode == 'test mode':
         
-    
+        head_file = st.file_uploader('Upload a head plist file', type=['plist'])
+        eye_file = st.file_uploader('Upload a eye plist file', type=['plist'])
+        
+        if head_file and eye_file:
+            test_function(head_file, eye_file, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, quantification_threshold)
