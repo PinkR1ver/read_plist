@@ -87,40 +87,40 @@ def get_diff(data):
     
     return diff
 
-def data_compress(data, compressed_ratio, key_points_list):
+# def data_compress(data, compressed_ratio, key_points_list):
     
-    key_points_cp = []
-    for key_points in key_points_list:
-        key_points_cp.append((key_points, data[key_points]))
+#     key_points_cp = []
+#     for key_points in key_points_list:
+#         key_points_cp.append((key_points, data[key_points]))
     
-    for i in range(0, len(key_points_cp)):
-        key_points_cp[i] = (int(key_points_cp[i][0] * compressed_ratio), key_points_cp[i][1])
+#     for i in range(0, len(key_points_cp)):
+#         key_points_cp[i] = (int(key_points_cp[i][0] * compressed_ratio), key_points_cp[i][1])
     
-    data_len = key_points_cp[-1][0]
+#     data_len = key_points_cp[-1][0]
     
-    data_cp = np.zeros(data_len + 1)
-    for i in range(1, len(key_points_cp) - 1):
-        left = key_points_cp[i-1][0]
-        right = key_points_cp[i][0] + 1
+#     data_cp = np.zeros(data_len + 1)
+#     for i in range(1, len(key_points_cp) - 1):
+#         left = key_points_cp[i-1][0]
+#         right = key_points_cp[i][0] + 1
         
-        if right - left == 2:
-            data_cp[left] = key_points_cp[i-1][1]
-            continue
+#         if right - left == 2:
+#             data_cp[left] = key_points_cp[i-1][1]
+#             continue
         
-        left_start = key_points_cp[i-1][1]
-        right_stop = key_points_cp[i][1]
-        data_cp[left:right] = np.linspace(left_start, right_stop, right - left)
+#         left_start = key_points_cp[i-1][1]
+#         right_stop = key_points_cp[i][1]
+#         data_cp[left:right] = np.linspace(left_start, right_stop, right - left)
     
-    key_points_return = key_points_list.copy()
-    for i in range(0, len(key_points_return)):
-        key_points_return[i] = int(key_points_return[i] * compressed_ratio)
-    key_points_return = list(set(key_points_return))
-    key_points_return[-1] = data_len - 1
+#     key_points_return = key_points_list.copy()
+#     for i in range(0, len(key_points_return)):
+#         key_points_return[i] = int(key_points_return[i] * compressed_ratio)
+#     key_points_return = list(set(key_points_return))
+#     key_points_return[-1] = data_len - 1
     
-    return data_cp, key_points_return
+#     return data_cp, key_points_return
 
 
-def batch_processing(file_list, sampling_frequency=50.0, high_pass_cutoff=0.1, high_pass_order=5, low_pass_cutoff=8.0, low_pass_order=5, moving_average_window=5, compress_ratio=0.2, quantification_threshold=0.5, y_axis_range_positive=15, y_axis_range_negative=-15):
+def batch_processing(file_list, sampling_frequency=50.0, high_pass_cutoff=0.1, high_pass_order=5, low_pass_cutoff=8.0, low_pass_order=5, moving_average_window=5, quantification_threshold=0.1, y_axis_range_positive=15, y_axis_range_negative=-15):
     
     
     result_csv_list = []
@@ -147,19 +147,21 @@ def batch_processing(file_list, sampling_frequency=50.0, high_pass_cutoff=0.1, h
             key_points_list = get_key_points(data)
             data_connect = data_connection(data, key_points_list)
             
-            data, key_points_list = data_compress(data, compress_ratio, key_points_list)
+            data = data_connect
+            
+            # data, key_points_list = data_compress(data, compress_ratio, key_points_list)
             
             data = quantification(data, quantification_threshold, key_points_list)
             
             acc = np.diff(data)
             acc = np.insert(acc, 0, 0)
             
-            time = np.linspace(0, len(data) / sampling_frequency, len(data)) / compress_ratio
+            time = np.linspace(0, len(data) / sampling_frequency, len(data))
             
             result_csv = pd.DataFrame({'time': time, 'amplitude': data, 'acceleration': acc})
             
             fig = figure(title=f'{file.name}', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400, y_range=(y_axis_range_negative, y_axis_range_positive))
-            time = np.linspace(0, len(data) / sampling_frequency, len(data)) / compress_ratio
+            time = np.linspace(0, len(data) / sampling_frequency, len(data))
             _interval = len(time) // 2 * 2
             _interval = _interval // 2 * 2
             fig.xaxis.ticker = bokeh.models.tickers.SingleIntervalTicker(interval=2)
@@ -168,7 +170,7 @@ def batch_processing(file_list, sampling_frequency=50.0, high_pass_cutoff=0.1, h
             fig.line(time, data, line_width=2, line_color='red')
             
             acc_fig = figure(title=f'{file.name}_acc', x_axis_label='Time(s)', y_axis_label='Acceleration', width=800, height=400, y_range=(y_axis_range_positive, y_axis_range_negative))
-            time = np.linspace(0, len(acc) / sampling_frequency, len(acc)) / compress_ratio
+            time = np.linspace(0, len(acc) / sampling_frequency, len(acc))
             _interval = len(time) // 2 * 2
             _interval = _interval // 2 * 2
             acc_fig.xaxis.ticker = bokeh.models.tickers.SingleIntervalTicker(interval=2)
@@ -216,7 +218,7 @@ def batch_processing(file_list, sampling_frequency=50.0, high_pass_cutoff=0.1, h
                 
                 try:
                     
-                    esw, t, head_data, eye_data = enhanced_saccadic_wave(head_file, eye_file, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, compress_ratio, quantification_threshold)
+                    esw, t, head_data, eye_data = enhanced_saccadic_wave(head_file, eye_file, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, quantification_threshold)
                     esw_fig = figure(title=f'{label} Enhanced Saccadic Wave', x_axis_label='Time(s)', y_axis_label='Enhanced Saccadic Wave', width=800, height=400)
                     esw_fig.line(t, head_data, line_width=2, color='orange', legend_label='Head Movement')
                     esw_fig.line(t, eye_data, line_width=2, color='green', legend_label='Eye Movement')
@@ -227,12 +229,12 @@ def batch_processing(file_list, sampling_frequency=50.0, high_pass_cutoff=0.1, h
                     
                     error_list.append((label, e))
             
-    parameter_csv = pd.DataFrame({'sampling_frequency': [sampling_frequency], 'high_pass_cutoff': [high_pass_cutoff], 'high_pass_order': [high_pass_order], 'low_pass_cutoff': [low_pass_cutoff], 'low_pass_order': [low_pass_order], 'moving_average_window': [moving_average_window], 'compress_ratio': [compress_ratio], 'quantification_threshold': [quantification_threshold]})
+    parameter_csv = pd.DataFrame({'sampling_frequency': [sampling_frequency], 'high_pass_cutoff': [high_pass_cutoff], 'high_pass_order': [high_pass_order], 'low_pass_cutoff': [low_pass_cutoff], 'low_pass_order': [low_pass_order], 'moving_average_window': [moving_average_window], 'quantification_threshold': [quantification_threshold]})
     
     return result_csv_list, fig_list, acc_fig_list, esw_fig_list, parameter_csv, error_list
 
 
-def enhanced_saccadic_wave(head_file, eye_file, sampling_frequency=50.0, high_pass_cutoff=0.1, high_pass_order=5, low_pass_cutoff=8.0, low_pass_order=5, moving_average_window=5, compress_ratio=0.2, quantification_threshold=0.5):
+def enhanced_saccadic_wave(head_file, eye_file, sampling_frequency=50.0, high_pass_cutoff=0.1, high_pass_order=5, low_pass_cutoff=8.0, low_pass_order=5, moving_average_window=5, quantification_threshold=0.1):
     
     try: 
         
@@ -256,7 +258,9 @@ def enhanced_saccadic_wave(head_file, eye_file, sampling_frequency=50.0, high_pa
         key_points_list = get_key_points(data)
         data_connect = data_connection(data, key_points_list)
         
-        data, key_points_list = data_compress(data, compress_ratio, key_points_list)
+        data = data_connect
+        
+        # data, key_points_list = data_compress(data, compress_ratio, key_points_list)
         
         data = quantification(data, quantification_threshold, key_points_list)
         
@@ -277,7 +281,9 @@ def enhanced_saccadic_wave(head_file, eye_file, sampling_frequency=50.0, high_pa
         key_points_list = get_key_points(data)
         data_connect = data_connection(data, key_points_list)
         
-        data, key_points_list = data_compress(data, compress_ratio, key_points_list)
+        data = data_connect
+        
+        # data, key_points_list = data_compress(data, compress_ratio, key_points_list)
         
         data = quantification(data, quantification_threshold, key_points_list)
         
@@ -322,8 +328,8 @@ if __name__ == '__main__':
         low_pass_cutoff = st.slider('Low-pass filter cutoff frequency', 0.0, 30.0, 8.0)
         low_pass_order = st.slider('Low-pass filter order', 1, 10, 5)
         moving_average_window = st.slider('Moving average window size', 1, 100, 5)
-        compress_ratio = st.slider('Compress ratio', 0.0, 1.0, 0.2, step=0.05)
-        quantification_threshold = st.slider('Quantification threshold', 0.0, 4.0, 0.5)
+        # compress_ratio = st.slider('Compress ratio', 0.0, 1.0, 0.2, step=0.05)
+        quantification_threshold = st.slider('Quantification threshold', 0.0, 4.0, 0.1)
         y_axis_range_positive = st.slider('Y positve axis range', -40, 40, 10)
         y_axis_range_negative = st.slider('Y negative axis range', -40, 40, -10)
         
@@ -396,28 +402,28 @@ if __name__ == '__main__':
         
         data = data_connect
         
-        st.markdown('### Time Domain Data Compression and Quantification')
+        st.markdown('### Time Domain Data Quantification')
         
         fig = figure(title='After doing connection', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400)
         time = np.linspace(0, len(data) / sampling_frequency, len(data))
         fig.line(time, data, line_width=2)
         st.bokeh_chart(fig)
         
-        data, key_points_list = data_compress(data, compress_ratio, key_points_list)
+        # data, key_points_list = data_compress(data, compress_ratio, key_points_list)
         
-        st.write('After data compress in time domain, we get the following signal:')
+        # st.write('After data compress in time domain, we get the following signal:')
         
-        fig = figure(title='After Data Compress', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400)
-        time = np.linspace(0, len(data) / sampling_frequency, len(data)) / compress_ratio
-        fig.line(time, data, line_width=2)
-        st.bokeh_chart(fig)
+        # fig = figure(title='After Data Compress', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400)
+        # time = np.linspace(0, len(data) / sampling_frequency, len(data)) / compress_ratio
+        # fig.line(time, data, line_width=2)
+        # st.bokeh_chart(fig)
         
         data = quantification(data, quantification_threshold, key_points_list)
         
         st.write('After quantification, we get the following signal:')
         
         fig = figure(title='After Quantification', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400)
-        time = np.linspace(0, len(data) / sampling_frequency, len(data)) / compress_ratio
+        time = np.linspace(0, len(data) / sampling_frequency, len(data))
         fig.line(time, data, line_width=2)
         st.bokeh_chart(fig)
         
@@ -425,7 +431,7 @@ if __name__ == '__main__':
         st.write('Here\'s the final result, you can download the graph and save the data to a .csv file.')
         
         fig = figure(title=f'{upload_file_name}', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400, y_range=(y_axis_range_negative, y_axis_range_positive))
-        time = np.linspace(0, len(data) / sampling_frequency, len(data)) / compress_ratio
+        time = np.linspace(0, len(data) / sampling_frequency, len(data))
 
         _interval = len(time) // 2 * 2
         _interval = _interval // 2 * 2
@@ -454,7 +460,7 @@ if __name__ == '__main__':
                 st.session_state.upload_files = upload_files
                 
                 progress_bar = st.progress(0, text='Processing...')
-                result_csv_list, fig_list, acc_fig_list, esw_fig_list, parameter_csv, error_list =  batch_processing(upload_files, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, compress_ratio, quantification_threshold, y_axis_range_positive, y_axis_range_negative)
+                result_csv_list, fig_list, acc_fig_list, esw_fig_list, parameter_csv, error_list =  batch_processing(upload_files, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, quantification_threshold, y_axis_range_positive, y_axis_range_negative)
                 progress_bar.progress(25, 'Saving...')
                 zipObj = ZipFile('result.zip', 'w')
                 for csv_name, csv_file in result_csv_list:
@@ -505,7 +511,7 @@ if __name__ == '__main__':
             
             progress_bar = st.progress(0, text='Processing...')
             
-            esw, t, head_data, eye_data = enhanced_saccadic_wave(head_file, eye_file, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, compress_ratio, quantification_threshold)
+            esw, t, head_data, eye_data = enhanced_saccadic_wave(head_file, eye_file, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, quantification_threshold)
             
             progress_bar.progress(100, 'Done!')
             
