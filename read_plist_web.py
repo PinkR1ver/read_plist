@@ -70,14 +70,14 @@ def data_connection(data, key_ponits_list):
     return result
 
 
-def quantification(data, threshold, key_points_list):
+def quantification(data, threshold):
     
-    for i in range(0, len(key_points_list)):
-        data[key_points_list[i]] = np.round(data[key_points_list[i]] / threshold) * threshold
+    data_cp = data.copy()
+    
+    for i in range(0, len(data)):
+        data_cp[i] = np.round(data[i] / threshold) * threshold
         
-    data_connect = data_connection(data, key_points_list)
-        
-    return data_connect
+    return data_cp
 
 
 def get_diff(data):
@@ -144,14 +144,12 @@ def batch_processing(file_list, sampling_frequency=50.0, high_pass_cutoff=0.1, h
             data_filtered = moving_average_filter(data, moving_average_window)
             data = data_filtered
             
-            key_points_list = get_key_points(data)
-            data_connect = data_connection(data, key_points_list)
-            
-            data = data_connect
+            # key_points_list = get_key_points(data)
+            # data_connect = data_connection(data, key_points_list)
             
             # data, key_points_list = data_compress(data, compress_ratio, key_points_list)
             
-            data = quantification(data, quantification_threshold, key_points_list)
+            data = quantification(data, quantification_threshold)
             
             acc = np.diff(data)
             acc = np.insert(acc, 0, 0)
@@ -255,14 +253,14 @@ def enhanced_saccadic_wave(head_file, eye_file, sampling_frequency=50.0, high_pa
         data_filtered = moving_average_filter(data, moving_average_window)
         data = data_filtered
         
-        key_points_list = get_key_points(data)
-        data_connect = data_connection(data, key_points_list)
+        # key_points_list = get_key_points(data)
+        # data_connect = data_connection(data, key_points_list)
         
-        data = data_connect
+        # data = data_connect
         
         # data, key_points_list = data_compress(data, compress_ratio, key_points_list)
         
-        data = quantification(data, quantification_threshold, key_points_list)
+        data = quantification(data, quantification_threshold)
         
         head_speed = np.diff(data)
         head_data = data
@@ -278,14 +276,14 @@ def enhanced_saccadic_wave(head_file, eye_file, sampling_frequency=50.0, high_pa
         data_filtered = moving_average_filter(data, moving_average_window)
         data = data_filtered
         
-        key_points_list = get_key_points(data)
-        data_connect = data_connection(data, key_points_list)
+        # key_points_list = get_key_points(data)
+        # data_connect = data_connection(data, key_points_list)
         
-        data = data_connect
+        # data = data_connect
         
         # data, key_points_list = data_compress(data, compress_ratio, key_points_list)
         
-        data = quantification(data, quantification_threshold, key_points_list)
+        data = quantification(data, quantification_threshold)
         
         eye_speed = np.diff(data)
         eye_data = data
@@ -328,10 +326,11 @@ if __name__ == '__main__':
         low_pass_cutoff = st.slider('Low-pass filter cutoff frequency', 0.0, 30.0, 8.0)
         low_pass_order = st.slider('Low-pass filter order', 1, 10, 5)
         moving_average_window = st.slider('Moving average window size', 1, 100, 5)
-        # compress_ratio = st.slider('Compress ratio', 0.0, 1.0, 0.2, step=0.05)
-        quantification_threshold = st.slider('Quantification threshold', 0.0, 4.0, 0.1)
+        quantification_threshold = st.slider('Quantification threshold', 0.01, 4.0, 0.1)
         y_axis_range_positive = st.slider('Y positve axis range', -40, 40, 10)
         y_axis_range_negative = st.slider('Y negative axis range', -40, 40, -10)
+        
+        # compress_ratio = st.slider('Compress ratio', 0.0, 1.0, 0.2, step=0.05)
         
     
     if mode == 'Example: Single File Processing Procedures Detail':
@@ -394,20 +393,20 @@ if __name__ == '__main__':
         fig.line(time, data, line_width=2)
         st.bokeh_chart(fig)
         
-        st.markdown('### Key Point Detection and Connection')
-        st.write('Here\'s the final result, we did the key point detection and use straight line to connect them')
+        # st.markdown('### Key Point Detection and Connection')
+        # st.write('Here\'s the final result, we did the key point detection and use straight line to connect them')
         
-        key_points_list = get_key_points(data)
-        data_connect = data_connection(data, key_points_list)
+        # key_points_list = get_key_points(data)
+        # data_connect = data_connection(data, key_points_list)
         
-        data = data_connect
+        # data = data_connect
         
-        st.markdown('### Time Domain Data Quantification')
+        # st.markdown('### Time Domain Data Quantification')
         
-        fig = figure(title='After doing connection', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400)
-        time = np.linspace(0, len(data) / sampling_frequency, len(data))
-        fig.line(time, data, line_width=2)
-        st.bokeh_chart(fig)
+        # fig = figure(title='After doing connection', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400)
+        # time = np.linspace(0, len(data) / sampling_frequency, len(data))
+        # fig.line(time, data, line_width=2)
+        # st.bokeh_chart(fig)
         
         # data, key_points_list = data_compress(data, compress_ratio, key_points_list)
         
@@ -418,7 +417,7 @@ if __name__ == '__main__':
         # fig.line(time, data, line_width=2)
         # st.bokeh_chart(fig)
         
-        data = quantification(data, quantification_threshold, key_points_list)
+        data = quantification(data, quantification_threshold)
         
         st.write('After quantification, we get the following signal:')
         
