@@ -394,6 +394,10 @@ def speed_filter(data, threshold=0.4):
     
     return key_idx
 
+def esw_filter(data, postive_or_negative_flag, threshold=0.4):
+    
+    for i in range(0, len(data)):
+        pass
 
 def test_function(head_file, eye_file, sampling_frequency=50.0, high_pass_cutoff=0.1, high_pass_order=5, low_pass_cutoff=8.0, low_pass_order=5, moving_average_window=5, quantification_threshold=0.1):
 
@@ -451,22 +455,18 @@ def test_function(head_file, eye_file, sampling_frequency=50.0, high_pass_cutoff
         st.bokeh_chart(fig)
         
         esw_speed = []
-        for i in range(0, len(key_idx[0])):
-            esw_speed_element = np.zeros(window_size * 2)
-            for j in range(0, window_size * 2):
-                if head_speed[key_idx[0][i] - window_size + j] != 0:
-                    esw_speed_element[j] = -eye_speed[key_idx[0][i] - window_size + j] / head_speed[key_idx[0][i] - window_size + j]
-                else:
-                    esw_speed_element[j] = 0
-            esw_speed.append(esw_speed_element)
-        for i in range(0, len(key_idx[1])):
-            esw_speed_element = np.zeros(window_size * 2)
-            for j in range(0, window_size * 2):
-                if head_speed[key_idx[1][i] - window_size + j] != 0 and (head_speed[key_idx[1][i] - window_size + j] > 1 or eye_speed[key_idx[1][i] - window_size + j] > 1):
-                    esw_speed_element[j] = -eye_speed[key_idx[1][i] - window_size + j] / head_speed[key_idx[1][i] - window_size + j]
-                else:
-                    esw_speed_element[j] = 0
-            esw_speed.append(esw_speed_element)
+        for idx in key_idx:
+            for i in range(0, len(idx)):
+                esw_speed_element = np.zeros(window_size * 2)
+                for j in range(0, window_size * 2):
+                    if abs(abs(head_speed[idx[i] - window_size + j]) - abs(eye_speed[idx[i] - window_size + j])) > 0.1 and (eye_speed[idx[i] - window_size + j] * head_speed[idx[i] - window_size + j]) < 0:
+                        if head_speed[idx[i] - window_size + j] != 0:
+                            esw_speed_element[j] =  abs(eye_speed[idx[i] - window_size + j] / head_speed[idx[i] - window_size + j])
+                        # else:
+                        #     esw_speed_element[j] = -eye_speed[idx[i] - window_size + j] / 0.01
+                    else:
+                        esw_speed_element[j] = 0
+                esw_speed.append(esw_speed_element)
                 
         
         fig = figure(title='Enhanced Saccadic Wave', x_axis_label='Time(s)', y_axis_label='Speed', width=800, height=400, y_range=(-3, 3))
@@ -482,9 +482,10 @@ def test_function(head_file, eye_file, sampling_frequency=50.0, high_pass_cutoff
         for i in range(0, len(esw_speed)):
             fig.line(time, esw_speed[i], line_width=2, color='red', legend_label='Enhanced Saccadic Wave')
         st.bokeh_chart(fig)
+        
         for i in range(0, len(key_idx[0])):
             
-            fig = figure(title=f'Right Speed {head_speed[key_idx[0][i]]}, head movement filter', x_axis_label='Time(s)', y_axis_label='Amplitidue', width=800, height=400)
+            fig = figure(title=f'Right head signal with speed {head_speed[key_idx[0][i]]}', x_axis_label='Time(s)', y_axis_label='Amplitidue', width=800, height=400)
             time = np.linspace(0, window_size * 2 / sampling_frequency, window_size * 2)
             head_signal = head_data[key_idx[0][i] - window_size:key_idx[0][i] + window_size]
             eye_signal = eye_data[key_idx[0][i] - window_size:key_idx[0][i] + window_size]
@@ -492,15 +493,30 @@ def test_function(head_file, eye_file, sampling_frequency=50.0, high_pass_cutoff
             fig.line(time, eye_signal, line_width=2, color='green')
             st.bokeh_chart(fig)
             
+            fig = figure(title=f'Right head move speed with speed {head_speed[key_idx[0][i]]}', x_axis_label='Time(s)', y_axis_label='Speed', width=800, height=400)
+            time = np.linspace(0, window_size * 2 / sampling_frequency, window_size * 2)
+            fig.line(time, head_speed[key_idx[0][i] - window_size:key_idx[0][i] + window_size], line_width=2, color='orange')
+            fig.line(time, -eye_speed[key_idx[0][i] - window_size:key_idx[0][i] + window_size], line_width=2, color='green')
+            fig.line(time, esw_speed[i], line_width=2, color='red')
+            st.bokeh_chart(fig)
+            
         for i in range(0, len(key_idx[1])):
             
-            fig = figure(title=f'Right Speed {head_speed[key_idx[1][i]]}, head movement filter', x_axis_label='Time(s)', y_axis_label='Amplitidue', width=800, height=400)
+            fig = figure(title=f'Left head signal with speed {head_speed[key_idx[1][i]]}', x_axis_label='Time(s)', y_axis_label='Amplitidue', width=800, height=400)
             time = np.linspace(0, window_size * 2 / sampling_frequency, window_size * 2)
             head_signal = head_data[key_idx[1][i] - window_size:key_idx[1][i] + window_size]
             eye_signal = eye_data[key_idx[1][i] - window_size:key_idx[1][i] + window_size]
             fig.line(time, head_signal, line_width=2, color='orange')
             fig.line(time, eye_signal, line_width=2, color='green')
             st.bokeh_chart(fig)
+            
+            fig = figure(title=f'Left head move speed with speed {head_speed[key_idx[1][i]]}', x_axis_label='Time(s)', y_axis_label='Speed', width=800, height=400)
+            time = np.linspace(0, window_size * 2 / sampling_frequency, window_size * 2)
+            fig.line(time, -head_speed[key_idx[1][i] - window_size:key_idx[1][i] + window_size], line_width=2, color='orange')
+            fig.line(time, eye_speed[key_idx[1][i] - window_size:key_idx[1][i] + window_size], line_width=2, color='green')
+            fig.line(time, esw_speed[len(key_idx[0]) + i], line_width=2, color='red')
+            st.bokeh_chart(fig)
+            
     
 
 if __name__ == '__main__':
