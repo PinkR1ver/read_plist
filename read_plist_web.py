@@ -778,6 +778,7 @@ def enhanced_saccadic_wave_report_download(head_file, left_eye_file, right_eye_f
         head_speed_clip_list = [[], [], [], []]
         max_esw_amplitude = 0
         speed_ratio_list = [[], [], [], []]
+        count_list = [[], [], [], []]
         
         for flag, eye_speed in enumerate([left_eye_speed, right_eye_speed]):
             for direction, idx in enumerate(key_idx):
@@ -842,7 +843,7 @@ def enhanced_saccadic_wave_report_download(head_file, left_eye_file, right_eye_f
                     fig_name = f'{patient_id} Head and Eye Speed with ESW, Wave {count}, {eye_flag} Eye, Head turn {head_direction}.svg'
                     fig_list.append((fig_name, fig))
                     
-                    count += 1
+                    
                     
                     max_esw_amplitude = max(max_esw_amplitude, max(esw_clip))
                     
@@ -851,22 +852,27 @@ def enhanced_saccadic_wave_report_download(head_file, left_eye_file, right_eye_f
                         eye_speed_clip_list[0].append(eye_speed_clip)
                         head_speed_clip_list[0].append(head_speed_clip)
                         speed_ratio_list[0].append(np.mean(np.array(eye_speed_clip)) / np.mean(np.array(head_speed_clip)))
+                        count_list[0].append(count)
                     elif flag == 0 and direction == 1:
                         esw_clip_list[1].append(esw_clip)
                         eye_speed_clip_list[1].append(eye_speed_clip)
                         head_speed_clip_list[1].append(head_speed_clip)
                         speed_ratio_list[1].append(np.mean(np.array(eye_speed_clip)) / np.mean(np.array(head_speed_clip)))
+                        count_list[1].append(count)
                     elif flag == 1 and direction == 0:
                         esw_clip_list[2].append(esw_clip)
                         eye_speed_clip_list[2].append(eye_speed_clip)
                         head_speed_clip_list[2].append(head_speed_clip)
                         speed_ratio_list[2].append(np.mean(np.array(eye_speed_clip)) / np.mean(np.array(head_speed_clip)))
+                        count_list[2].append(count)
                     elif flag == 1 and direction == 1:
                         esw_clip_list[3].append(esw_clip)
                         eye_speed_clip_list[3].append(eye_speed_clip)
                         head_speed_clip_list[3].append(head_speed_clip)
                         speed_ratio_list[3].append(np.mean(np.array(eye_speed_clip)) / np.mean(np.array(head_speed_clip)))
-                        
+                        count_list[3].append(count)
+
+                    count += 1
 
         fig1 = figure(title=f'{patient_id} Head and Eye Speed, Left Eye, turn Right', x_axis_label='Time(s)', y_axis_label='Speed', width=800, height=400)
         fig1_name = f'{patient_id} Head and Eye Speed, Left Eye, turn Right.svg'
@@ -905,7 +911,7 @@ def enhanced_saccadic_wave_report_download(head_file, left_eye_file, right_eye_f
             fig_list.append((fig_name_list[index], fig))
         
         
-        return fig_list
+        return fig_list, count_list
         
            
 
@@ -1312,7 +1318,7 @@ if __name__ == '__main__':
             patient_id = head_file.name
             patient_id = patient_id.split('_')[0]
             
-            fig_list = enhanced_saccadic_wave_report_download(head_file, left_eye_file, right_eye_file, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, quantification_threshold)
+            fig_list, count_list = enhanced_saccadic_wave_report_download(head_file, left_eye_file, right_eye_file, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, quantification_threshold)
 
             zipObj = ZipFile(f'{patient_id}_report.zip', 'w')
             
@@ -1332,11 +1338,28 @@ if __name__ == '__main__':
                     wave = (index - 2) // 3 
                     wave = int(wave)
                     
+                    label = 0
+                    
+                    for index, count in enumerate(count_list):
+                        if wave in count:
+                            label = index
+                    
+                    subfolder = 'left_eye_turn_right/'
+                      
+                    if label == 0:
+                        subfolder = 'left_eye_head_turn_right/'
+                    elif label == 1:
+                        subfolder = 'left_eye_head_turn_left/'
+                    elif label == 2:
+                        subfolder = 'right_eye_head_turn_right/'
+                    elif label == 3:
+                        subfolder = 'right_eye_head_turn_left/'
+                    
                     fig.output_backend = 'svg'
                     fig_data = get_svgs(fig)
                     fig_data = fig_data[0]
                     fig_data = fig_data.encode('utf-8')
-                    zipObj.writestr('detail/' + f'wave {wave}/' + fig_name, fig_data)
+                    zipObj.writestr('detail/' + subfolder + f'wave {wave}/' + fig_name, fig_data)
                     
                     
                     
