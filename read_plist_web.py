@@ -565,21 +565,24 @@ def enhanced_saccadic_wave_report(head_file, left_eye_file, right_eye_file, samp
                 esw_amp.append(np.max(esw_clip))
                 
             
-            
-            max_esw_amp = max(esw_amp)
-            
-            for esw_clip in esw_clip_list:
+            if esw_amp != []:
+                max_esw_amp = max(esw_amp)
                 
-                log_base = 4
-                
-                if max(esw_clip) == 0:
-                    continue
+                for esw_clip in esw_clip_list:
                     
-                linear_ratio = esw_regulartion / max(esw_clip)
-                power_ratio = max(esw_clip) / max_esw_amp
-                esw_clip = np.array(esw_clip) * linear_ratio
-                esw_clip = esw_clip * math.log(power_ratio + log_base - 1, log_base)
-                fig.line(time, esw_clip, line_width=2, color='red', legend_label='Enhanced Saccadic Wave')
+                    log_base = 4
+                    
+                    if max(esw_clip) == 0:
+                        continue
+                        
+                    linear_ratio = esw_regulartion / max(esw_clip)
+                    power_ratio = max(esw_clip) / max_esw_amp
+                    esw_clip = np.array(esw_clip) * linear_ratio
+                    esw_clip = esw_clip * math.log(power_ratio + log_base - 1, log_base)
+                    fig.line(time, esw_clip, line_width=2, color='red', legend_label='Enhanced Saccadic Wave')
+                    
+            else:
+                st.write('No Enhanced Saccadic Wave Found')
             
             esw_factor_mean = np.mean(esw_factor)
             esw_factor_std = np.std(esw_factor)
@@ -600,7 +603,7 @@ def enhanced_saccadic_wave_report(head_file, left_eye_file, right_eye_file, samp
                         right_eye_speed_clip = right_eye_speed[i - window_size:i + window_size]
                     
                     head_data_clip = head_data[i - window_size:i + window_size]
-                    eye_data_clip = right_eye_data[i - window_size:i + window_size]
+                    right_eye_data_clip = right_eye_data[i - window_size:i + window_size]
                     
                     esw_clip = []
                     
@@ -675,21 +678,25 @@ def enhanced_saccadic_wave_report(head_file, left_eye_file, right_eye_file, samp
                 if np.max(esw_clip) == 0:
                     continue
                 esw_amp.append(np.max(esw_clip))
-                
-            max_esw_amp = max(esw_amp)
             
-            for esw_clip in esw_clip_list:
-                    
-                    log_base = 4
-                    
-                    if max(esw_clip) == 0:
-                        continue
+            if esw_amp != []:
+                max_esw_amp = max(esw_amp)
+                
+                for esw_clip in esw_clip_list:
                         
-                    linear_ratio = esw_regulartion / max(esw_clip)
-                    power_ratio = max(esw_clip) / max_esw_amp
-                    esw_clip = np.array(esw_clip) * linear_ratio
-                    esw_clip = esw_clip * math.log(power_ratio + log_base - 1, log_base)
-                    fig.line(time, esw_clip, line_width=2, color='red', legend_label='Enhanced Saccadic Wave')
+                        log_base = 4
+                        
+                        if max(esw_clip) == 0:
+                            continue
+                            
+                        linear_ratio = esw_regulartion / max(esw_clip)
+                        power_ratio = max(esw_clip) / max_esw_amp
+                        esw_clip = np.array(esw_clip) * linear_ratio
+                        esw_clip = esw_clip * math.log(power_ratio + log_base - 1, log_base)
+                        fig.line(time, esw_clip, line_width=2, color='red', legend_label='Enhanced Saccadic Wave')
+                
+            else:
+                st.write('No Enhanced Saccadic Wave Found')
                 
             esw_factor_mean = np.mean(esw_factor)
             esw_factor_std = np.std(esw_factor)
@@ -699,7 +706,208 @@ def enhanced_saccadic_wave_report(head_file, left_eye_file, right_eye_file, samp
             st.bokeh_chart(fig)
                 
                 
-                
+def enhanced_saccadic_wave_report_download(head_file, left_eye_file, right_eye_file, sampling_frequency=50.0, high_pass_cutoff=0.1, high_pass_order=5, low_pass_cutoff=8.0, low_pass_order=5, moving_average_window=5, quantification_threshold=0.1):
+
+        interpolate_ratio = 10
+        window_size = 25 * interpolate_ratio
+        
+        mov_data = [0, 0, 0]
+        for index, file in enumerate([head_file, left_eye_file, right_eye_file]):
+            bytes_data = file.getvalue()
+            data = plistlib.loads(bytes_data)
+            
+            data_filtered = butter_highpass_filter(data, high_pass_cutoff, sampling_frequency, high_pass_order)
+            data = data_filtered
+            
+            data_filtered = butter_lowpass_filter(data, low_pass_cutoff, sampling_frequency, low_pass_order)
+            data = data_filtered
+        
+            data_filtered = moving_average_filter(data, moving_average_window)
+            mov_data[index] = data_filtered
+            
+        head_data = mov_data[0]
+        left_eye_data = mov_data[1]
+        right_eye_data = mov_data[2]
+        
+        
+        head_data = mov_data[0]
+        left_eye_data = mov_data[1]
+        right_eye_data = mov_data[2]
+        
+        key_idx = speed_filter(head_data)
+        for i in range(0, len(key_idx)):
+            for j in range(0, len(key_idx[i])):
+                key_idx[i][j] = key_idx[i][j] * interpolate_ratio
+        
+        head_data = sig.resample(head_data, len(head_data) * interpolate_ratio)
+        left_eye_data = sig.resample(left_eye_data, len(left_eye_data) * interpolate_ratio)
+        right_eye_data = sig.resample(right_eye_data, len(right_eye_data) * interpolate_ratio)
+        
+        head_speed = np.diff(head_data)
+        head_speed = np.insert(head_speed, 0, 0)
+        
+        left_eye_speed = np.diff(left_eye_data)
+        left_eye_speed = np.insert(left_eye_speed, 0, 0)
+        
+        right_eye_speed = np.diff(right_eye_data)
+        right_eye_speed = np.insert(right_eye_speed, 0, 0)
+        
+        patient_id = head_file.name
+        patient_id = patient_id.split('_')[0]
+        
+        fig_list = []
+        
+        
+        fig = figure(title=f'{patient_id} Head and Left Eye Movement Signal', x_axis_label='Time(s)', y_axis_label='Speed', width=800, height=400)
+        time = np.linspace(0, len(head_speed) / sampling_frequency, len(head_speed))
+        fig.line(time, head_data, line_width=2, color='orange', legend_label='Head Speed')
+        fig.line(time, left_eye_data, line_width=2, color='green', legend_label='Eye Speed')
+        fig_name = f'{patient_id} Head and Left Eye Movement Signal.svg'
+        fig_list.append((fig_name, fig))
+        
+        fig = figure(title=f'{patient_id} Head and Right Eye Movement Signal', x_axis_label='Time(s)', y_axis_label='Speed', width=800, height=400)
+        time = np.linspace(0, len(head_speed) / sampling_frequency, len(head_speed))
+        fig.line(time, head_data, line_width=2, color='orange', legend_label='Head Speed')
+        fig.line(time, right_eye_data, line_width=2, color='green', legend_label='Eye Speed')
+        fig_name = f'{patient_id} Head and Right Eye Movement Signal.svg'
+        fig_list.append((fig_name, fig))
+        
+        count = 0
+        esw_clip_list = [[], [], [], []]
+        eye_speed_clip_list = [[], [], [], []]
+        head_speed_clip_list = [[], [], [], []]
+        max_esw_amplitude = 0
+        speed_ratio_list = [[], [], [], []]
+        
+        for flag, eye_speed in enumerate([left_eye_speed, right_eye_speed]):
+            for direction, idx in enumerate(key_idx):
+                for i in idx:
+                    if direction == 0:
+                        head_speed_clip = head_speed[i - window_size:i + window_size]
+                        eye_speed_clip = eye_speed[i - window_size:i + window_size]
+                    if direction == 1:
+                        head_speed_clip = -head_speed[i - window_size:i + window_size]
+                        eye_speed_clip = eye_speed[i - window_size:i + window_size]
+                        
+                    head_data_clip = head_data[i - window_size:i + window_size]
+                    if flag == 0:
+                        eye_data_clip = left_eye_data[i - window_size:i + window_size]
+                    elif flag == 1:
+                        eye_data_clip = right_eye_data[i - window_size:i + window_size]
+                    
+                    esw_clip = []
+                    
+                    for j in range(0, len(head_speed_clip)):
+                        later_index = []
+                        if abs(head_speed_clip[j] - eye_speed_clip[j]) > 0.05 and eye_speed_clip[j] >= 0 and head_speed_clip[j] <= 0 and j > window_size * 1.2:
+                            if head_speed_clip[j] != 0:
+                                esw_clip.append(-eye_speed_clip[j] / head_speed_clip[j])
+                            else:
+                                later_index.append(j)
+                                esw_clip.append(0)
+                        else:
+                            esw_clip.append(0)
+                            
+                        for k in later_index:
+                            esw_clip[k] = (esw_clip[k-1] + esw_clip[k+1]) / 2
+                        
+                    time = np.linspace(-window_size / sampling_frequency, window_size / sampling_frequency, window_size * 2)
+                    
+                    if flag == 0:
+                        eye_flag = 'Left'
+                    elif flag == 1:
+                        eye_flag = 'Right'
+                    
+                    if direction == 0:
+                        head_direction = 'Right'
+                    elif direction == 1:
+                        head_direction = 'Left' 
+                    
+                    fig = figure(title=f'{patient_id} Head and Eye Movement, Wave {count}, {eye_flag} Eye, Head turn {head_direction}', x_axis_label='Time(s)', y_axis_label='Amplitude', width=800, height=400)
+                    fig.line(time, head_data_clip, line_width=2, color='orange', legend_label='Head Movement')
+                    fig.line(time, eye_data_clip, line_width=2, color='green', legend_label='Eye Movement')
+                    fig_name = f'{patient_id} Head and Eye Movement Wave {count}, {eye_flag} Eye, Head turn {head_direction}.svg'
+                    fig_list.append((fig_name, fig))
+                    
+                    fig = figure(title=f'{patient_id} Head and Eye Speed, Wave {count}, {eye_flag} Eye, Head turn {head_direction}', x_axis_label='Time(s)', y_axis_label='Speed', width=800, height=400)
+                    fig.line(time, head_speed_clip, line_width=2, color='orange', legend_label='Head Speed')
+                    fig.line(time, eye_speed_clip, line_width=2, color='green', legend_label='Eye Speed')
+                    fig_name = f'{patient_id} Head and Eye Speed, Wave {count}, {eye_flag} Eye, Head turn {head_direction}.svg'
+                    fig_list.append((fig_name, fig))
+                    
+                    fig = figure(title=f'{patient_id} Head and Eye Speed with ESW, Wave {count}, {eye_flag} Eye, Head turn {head_direction}', x_axis_label='Time(s)', y_axis_label='Speed', width=800, height=400)
+                    fig.line(time, head_speed_clip, line_width=2, color='orange', legend_label='Head Speed')
+                    fig.line(time, eye_speed_clip, line_width=2, color='green', legend_label='Eye Speed')
+                    fig.line(time, esw_clip, line_width=2, color='red', legend_label='Enhanced Saccadic Wave')
+                    fig_name = f'{patient_id} Head and Eye Speed with ESW, Wave {count}, {eye_flag} Eye, Head turn {head_direction}.svg'
+                    fig_list.append((fig_name, fig))
+                    
+                    count += 1
+                    
+                    max_esw_amplitude = max(max_esw_amplitude, max(esw_clip))
+                    
+                    if flag == 0 and direction == 0:
+                        esw_clip_list[0].append(esw_clip)
+                        eye_speed_clip_list[0].append(eye_speed_clip)
+                        head_speed_clip_list[0].append(head_speed_clip)
+                        speed_ratio_list[0].append(np.mean(np.array(eye_speed_clip)) / np.mean(np.array(head_speed_clip)))
+                    elif flag == 0 and direction == 1:
+                        esw_clip_list[1].append(esw_clip)
+                        eye_speed_clip_list[1].append(eye_speed_clip)
+                        head_speed_clip_list[1].append(head_speed_clip)
+                        speed_ratio_list[1].append(np.mean(np.array(eye_speed_clip)) / np.mean(np.array(head_speed_clip)))
+                    elif flag == 1 and direction == 0:
+                        esw_clip_list[2].append(esw_clip)
+                        eye_speed_clip_list[2].append(eye_speed_clip)
+                        head_speed_clip_list[2].append(head_speed_clip)
+                        speed_ratio_list[2].append(np.mean(np.array(eye_speed_clip)) / np.mean(np.array(head_speed_clip)))
+                    elif flag == 1 and direction == 1:
+                        esw_clip_list[3].append(esw_clip)
+                        eye_speed_clip_list[3].append(eye_speed_clip)
+                        head_speed_clip_list[3].append(head_speed_clip)
+                        speed_ratio_list[3].append(np.mean(np.array(eye_speed_clip)) / np.mean(np.array(head_speed_clip)))
+                        
+
+        fig1 = figure(title=f'{patient_id} Head and Eye Speed, Left Eye, turn Right', x_axis_label='Time(s)', y_axis_label='Speed', width=800, height=400)
+        fig1_name = f'{patient_id} Head and Eye Speed, Left Eye, turn Right.svg'
+        fig2 = figure(title=f'{patient_id} Head and Eye Speed, Left Eye, turn Left', x_axis_label='Time(s)', y_axis_label='Speed', width=800, height=400)
+        fig2_name = f'{patient_id} Head and Eye Speed, Left Eye, turn Left.svg'
+        fig3 = figure(title=f'{patient_id} Head and Eye Speed, Right Eye, turn Right', x_axis_label='Time(s)', y_axis_label='Speed', width=800, height=400)
+        fig3_name = f'{patient_id} Head and Eye Speed, Right Eye, turn Right.svg'
+        fig4 = figure(title=f'{patient_id} Head and Eye Speed, Right Eye, turn Left', x_axis_label='Time(s)', y_axis_label='Speed', width=800, height=400)
+        fig4_name = f'{patient_id} Head and Eye Speed, Right Eye, turn Left.svg'
+        
+        fig_tmp_list = [fig1, fig2, fig3, fig4]
+        fig_name_list = [fig1_name, fig2_name, fig3_name, fig4_name]
+        
+        esw_regulartion = 0.8
+        log_base = 5
+        
+        for index, esw_clip_comb in enumerate(esw_clip_list):
+            
+            fig = fig_tmp_list[index]
+            for jndex, esw_clip in enumerate(esw_clip_comb):
+                if max(esw_clip) != 0:
+                    linear_ratio = esw_regulartion / max(esw_clip)
+                    power_ratio = max(esw_clip) / max_esw_amplitude
+                    esw_clip = np.array(esw_clip) * linear_ratio
+                    esw_clip = esw_clip * math.log(power_ratio + log_base - 1, log_base)
+                    fig.line(time, esw_clip, line_width=2, color='red', legend_label='Enhanced Saccadic Wave')
+                fig.line(time, head_speed_clip_list[index][jndex], color='orange', legend_label='Head Speed')
+                if index == 0 or index == 2:
+                    fig.line(time, -eye_speed_clip_list[index][jndex], color='green', legend_label='Eye Speed')
+                elif index == 1 or index == 3:
+                    fig.line(time, eye_speed_clip_list[index][jndex], color='green', legend_label='Eye Speed')
+                    
+            speed_ratio = np.mean(np.array(speed_ratio_list[index]))
+            fig.text(x=0, y=0, text=[f'{speed_ratio}'], text_color='black')
+            
+            fig_list.append((fig_name_list[index], fig))
+        
+        
+        return fig_list
+        
+           
 
 
 def speed_filter(data, threshold=0.4):
@@ -850,7 +1058,7 @@ def test_function(head_file, eye_file, sampling_frequency=50.0, high_pass_cutoff
             fig.line(time, esw_speed[len(key_idx[0]) + i], line_width=2, color='red')
             st.bokeh_chart(fig)
             
-    
+
 
 if __name__ == '__main__':
     
@@ -858,7 +1066,7 @@ if __name__ == '__main__':
 
     with st.sidebar:
         
-        mode = st.selectbox('Select the mode', ['Example: Single File Processing Procedures Detail', 'Batch Processing', 'Enhanced Saccadic Wave', 'test mode', 'Enchanced Saccadic Wave Report'], index=0)
+        mode = st.selectbox('Select the mode', ['Example: Single File Processing Procedures Detail', 'Batch Processing', 'Enhanced Saccadic Wave', 'test mode', 'Enchanced Saccadic Wave Report', 'Enchanced Saccadic Wave Report Download'], index=0)
         
         st.title('Control the filter parameters')
         
@@ -1088,3 +1296,51 @@ if __name__ == '__main__':
         if head_file and left_eye_file and right_eye_file:
             
             enhanced_saccadic_wave_report(head_file, left_eye_file, right_eye_file, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, quantification_threshold)
+            
+            
+    if mode == 'Enchanced Saccadic Wave Report Download':
+        
+        st.title('Enhanced Saccadic Wave Report')
+        st.write('Upload the head and eye movement data to generate the report.')
+        
+        head_file = st.file_uploader('Upload the head movement data', type=['plist'])
+        left_eye_file = st.file_uploader('Upload the left_eye movement data', type=['plist'])
+        right_eye_file = st.file_uploader('Upload the right_eye movement data', type=['plist'])
+        
+        if head_file and left_eye_file and right_eye_file:
+            
+            patient_id = head_file.name
+            patient_id = patient_id.split('_')[0]
+            
+            fig_list = enhanced_saccadic_wave_report_download(head_file, left_eye_file, right_eye_file, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, quantification_threshold)
+
+            zipObj = ZipFile(f'{patient_id}_report.zip', 'w')
+            
+            for index, (fig_name, fig) in enumerate(fig_list):
+                
+                if index <=1 or index >= len(fig_list) - 4:
+                
+                    fig.output_backend = 'svg'
+                    fig_data = get_svgs(fig)
+                    fig_data = fig_data[0]
+                    fig_data = fig_data.encode('utf-8')
+                    zipObj.writestr('overview/' + fig_name, fig_data)
+                    
+                elif index >1 and index < len(fig_list) - 4:
+                    # write into a subfolder
+                    
+                    wave = (index - 2) // 3 
+                    wave = int(wave)
+                    
+                    fig.output_backend = 'svg'
+                    fig_data = get_svgs(fig)
+                    fig_data = fig_data[0]
+                    fig_data = fig_data.encode('utf-8')
+                    zipObj.writestr('detail/' + f'wave {wave}/' + fig_name, fig_data)
+                    
+                    
+                    
+                
+            zipObj.close()
+            
+            st.download_button('Download the result as a ZIP file', open(f'{patient_id}_report.zip', 'rb').read(), f'{patient_id}_report.zip', 'application/zip')
