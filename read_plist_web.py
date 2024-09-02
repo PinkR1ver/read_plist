@@ -12,6 +12,7 @@ import pandas as pd
 from zipfile import ZipFile
 import scipy.signal as sig
 import math
+import matplotlib.pyplot as plt
 
 def moving_average_filter(data, window_size):
     window_size = int(window_size)
@@ -756,7 +757,8 @@ def enhanced_saccadic_wave_report_download(head_file, left_eye_file, right_eye_f
         patient_id = patient_id.split('_')[0]
         
         fig_list = []
-        
+        hist_fig_list = []
+        speed_gain_list = []
         
         fig = figure(title=f'{patient_id} Head and Left Eye Movement Signal', x_axis_label='Time(s)', y_axis_label='Speed', width=800, height=400)
         time = np.linspace(0, len(head_speed) / sampling_frequency, len(head_speed))
@@ -832,13 +834,23 @@ def enhanced_saccadic_wave_report_download(head_file, left_eye_file, right_eye_f
                     
                     fig = figure(title=f'{patient_id} Head and Eye Speed, Wave {count}, {eye_flag} Eye, Head turn {head_direction}', x_axis_label='Time(s)', y_axis_label='Speed', width=800, height=400)
                     fig.line(time, head_speed_clip, line_width=2, color='orange', legend_label='Head Speed')
-                    fig.line(time, eye_speed_clip, line_width=2, color='green', legend_label='Eye Speed')
+                    
+                    if direction == 0:
+                        fig.line(time, -eye_speed_clip, line_width=2, color='green', legend_label='Eye Speed')
+                    else:
+                        fig.line(time, eye_speed_clip, line_width=2, color='green', legend_label='Eye Speed')
+                        
                     fig_name = f'{patient_id} Head and Eye Speed, Wave {count}, {eye_flag} Eye, Head turn {head_direction}.svg'
                     fig_list.append((fig_name, fig))
                     
                     fig = figure(title=f'{patient_id} Head and Eye Speed with ESW, Wave {count}, {eye_flag} Eye, Head turn {head_direction}', x_axis_label='Time(s)', y_axis_label='Speed', width=800, height=400)
                     fig.line(time, head_speed_clip, line_width=2, color='orange', legend_label='Head Speed')
-                    fig.line(time, eye_speed_clip, line_width=2, color='green', legend_label='Eye Speed')
+                    
+                    if direction == 0:
+                        fig.line(time, -eye_speed_clip, line_width=2, color='green', legend_label='Eye Speed')
+                    else:
+                        fig.line(time, eye_speed_clip, line_width=2, color='green', legend_label='Eye Speed')
+                        
                     fig.line(time, esw_clip, line_width=2, color='red', legend_label='Enhanced Saccadic Wave')
                     fig_name = f'{patient_id} Head and Eye Speed with ESW, Wave {count}, {eye_flag} Eye, Head turn {head_direction}.svg'
                     fig_list.append((fig_name, fig))
@@ -851,25 +863,25 @@ def enhanced_saccadic_wave_report_download(head_file, left_eye_file, right_eye_f
                         esw_clip_list[0].append(esw_clip)
                         eye_speed_clip_list[0].append(eye_speed_clip)
                         head_speed_clip_list[0].append(head_speed_clip)
-                        speed_ratio_list[0].append(np.mean(np.array(eye_speed_clip)) / np.mean(np.array(head_speed_clip)))
+                        speed_ratio_list[0].append([eye_speed_clip[k] / head_speed_clip[k] for k in range(0, len(eye_speed_clip))])
                         count_list[0].append(count)
                     elif flag == 0 and direction == 1:
                         esw_clip_list[1].append(esw_clip)
                         eye_speed_clip_list[1].append(eye_speed_clip)
                         head_speed_clip_list[1].append(head_speed_clip)
-                        speed_ratio_list[1].append(np.mean(np.array(eye_speed_clip)) / np.mean(np.array(head_speed_clip)))
+                        speed_ratio_list[1].append([eye_speed_clip[k] / head_speed_clip[k] for k in range(0, len(eye_speed_clip))])
                         count_list[1].append(count)
                     elif flag == 1 and direction == 0:
                         esw_clip_list[2].append(esw_clip)
                         eye_speed_clip_list[2].append(eye_speed_clip)
                         head_speed_clip_list[2].append(head_speed_clip)
-                        speed_ratio_list[2].append(np.mean(np.array(eye_speed_clip)) / np.mean(np.array(head_speed_clip)))
+                        speed_ratio_list[2].append([eye_speed_clip[k] / head_speed_clip[k] for k in range(0, len(eye_speed_clip))])
                         count_list[2].append(count)
                     elif flag == 1 and direction == 1:
                         esw_clip_list[3].append(esw_clip)
                         eye_speed_clip_list[3].append(eye_speed_clip)
                         head_speed_clip_list[3].append(head_speed_clip)
-                        speed_ratio_list[3].append(np.mean(np.array(eye_speed_clip)) / np.mean(np.array(head_speed_clip)))
+                        speed_ratio_list[3].append([eye_speed_clip[k] / head_speed_clip[k] for k in range(0, len(eye_speed_clip))])
                         count_list[3].append(count)
 
                     count += 1
@@ -888,6 +900,12 @@ def enhanced_saccadic_wave_report_download(head_file, left_eye_file, right_eye_f
         
         esw_regulartion = 0.8
         log_base = 5
+        head_and_eye_direction = ['Left Eye, turn Right', 'Left Eye, turn Left', 'Right Eye, turn Right', 'Right Eye, turn Left']
+        
+        # plot the boxplot of four direction's speed ratio
+        box_fig = figure(title=f'{patient_id} Head and Eye Speed Ratio Boxplot', x_axis_label='Direction', y_axis_label='Speed Ratio', width=800, height=400)
+        box_fig.xaxis.ticker = [1, 2, 3, 4]
+        box_fig.xaxis.major_label_overrides = {1: 'Left Eye, turn Right', 2: 'Left Eye, turn Left', 3: 'Right Eye, turn Right', 4: 'Right Eye, turn Left'}
         
         for index, esw_clip_comb in enumerate(esw_clip_list):
             
@@ -904,14 +922,49 @@ def enhanced_saccadic_wave_report_download(head_file, left_eye_file, right_eye_f
                     fig.line(time, -eye_speed_clip_list[index][jndex], color='green', legend_label='Eye Speed')
                 elif index == 1 or index == 3:
                     fig.line(time, eye_speed_clip_list[index][jndex], color='green', legend_label='Eye Speed')
-                    
-            speed_ratio = np.mean(np.array(speed_ratio_list[index]))
-            fig.text(x=0, y=0, text=[f'{speed_ratio}'], text_color='black')
+            
+            speed_ratio_tmp = [float(item) for sublist in speed_ratio_list[index] for item in sublist]
+            speed_ratio_tmp = np.array(speed_ratio_tmp)
+            filter_arr = []
+            
+            for element in speed_ratio_tmp:
+                if abs(element) > 2 or abs(element) < 0.2:
+                    filter_arr.append(False)
+                else:
+                    filter_arr.append(True)
+            
+            speed_ratio_tmp = speed_ratio_tmp[filter_arr]
+            speed_ratio_tmp = np.absolute(speed_ratio_tmp)
+            
+            # plot the boxplot
+            box_fig.vbar(x=[index + 1], top=[np.mean(speed_ratio_tmp)], width=0.5, bottom=[np.mean(speed_ratio_tmp) - np.std(speed_ratio_tmp)], color='orange', legend_label='Mean and Std')
+            box_fig.circle(x=[index + 1], y=[np.mean(speed_ratio_tmp)], size=10, color='red', legend_label='Mean')
+            box_fig.vbar(x=[index + 1], top=[np.percentile(speed_ratio_tmp, 75)], width=0.1, bottom=[np.percentile(speed_ratio_tmp, 25)], color='blue', legend_label='25% - 75%')
+            box_fig.circle(x=[index + 1], y=[np.percentile(speed_ratio_tmp, 75)], size=10, color='blue', legend_label='75%')
+            box_fig.circle(x=[index + 1], y=[np.percentile(speed_ratio_tmp, 25)], size=10, color='blue', legend_label='25%')
+            
+            
+            # plot the speed_ratio_tmp's histogram
+            fig_tmp = figure(title=f'{patient_id} Head and Eye Speed Ratio Histogram, {head_and_eye_direction[index]}', x_axis_label='Speed Ratio', y_axis_label='Frequency', width=800, height=400)
+            hist, edges = np.histogram(speed_ratio_tmp, density=True, bins=100)
+            fig_tmp.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], line_color='white')
+            
+            speed_ratio = np.mean(speed_ratio_tmp)
+            speed_std = np.std(speed_ratio_tmp)
+            
+            # fig_tmp.text(x=[0.2], y=[0.9], text=[f'Speed Gain: {speed_ratio}'], text_color='red')
+            fig_tmp_name = f'{patient_id} Head and Eye Speed Ratio Histogram, {head_and_eye_direction[index]}.svg'
+            
+            
             
             fig_list.append((fig_name_list[index], fig))
+            hist_fig_list.append((fig_tmp_name, fig_tmp))
+            speed_gain_list.append(f'{speed_ratio} +- {speed_std}')
+            
+        hist_fig_list.append(('Speed Ratio Boxplot', box_fig))
         
         
-        return fig_list, count_list
+        return fig_list, count_list, hist_fig_list, speed_gain_list
         
            
 
@@ -1318,7 +1371,7 @@ if __name__ == '__main__':
             patient_id = head_file.name
             patient_id = patient_id.split('_')[0]
             
-            fig_list, count_list = enhanced_saccadic_wave_report_download(head_file, left_eye_file, right_eye_file, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, quantification_threshold)
+            fig_list, count_list, hist_fig_list, speed_gain_list = enhanced_saccadic_wave_report_download(head_file, left_eye_file, right_eye_file, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, quantification_threshold)
 
             zipObj = ZipFile(f'{patient_id}_report.zip', 'w')
             
@@ -1361,9 +1414,19 @@ if __name__ == '__main__':
                     fig_data = fig_data.encode('utf-8')
                     zipObj.writestr('detail/' + subfolder + f'wave {wave}/' + fig_name, fig_data)
                     
+            for index, (fig_name, fig) in enumerate(hist_fig_list):
                     
-                    
+                fig.output_backend = 'svg'
+                fig_data = get_svgs(fig)
+                fig_data = fig_data[0]
+                fig_data = fig_data.encode('utf-8')
+                zipObj.writestr('overview/' + fig_name, fig_data)
                 
+            head_and_eye_direction = ['Left Eye, turn Right', 'Left Eye, turn Left', 'Right Eye, turn Right', 'Right Eye, turn Left']
+            speed_gain_df = pd.DataFrame(speed_gain_list, columns=['Speed Gain'])
+            speed_gain_df['Head and Eye Direction'] = head_and_eye_direction
+            zipObj.writestr('overview/speed_gain.csv', speed_gain_df.to_csv())
+                    
             zipObj.close()
             
             st.download_button('Download the result as a ZIP file', open(f'{patient_id}_report.zip', 'rb').read(), f'{patient_id}_report.zip', 'application/zip')
