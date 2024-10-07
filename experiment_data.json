@@ -1,0 +1,272 @@
+{
+  "fx": {
+    "1": {
+      "1": {
+        "head": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\fx\\fx1_pHIT_head.plist",
+          "signal_length": 1392
+        },
+        "lefteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\fx\\fx1_pHIT_lefteye.plist",
+          "signal_length": 1393
+        },
+        "righteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\fx\\fx1_pHIT_righteye.plist",
+          "signal_length": 1393
+        }
+      },
+      "2": {
+        "head": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\fx\\fx2_pHIT_head.plist",
+          "signal_length": 1021
+        },
+        "lefteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\fx\\fx2_pHIT_lefteye.plist",
+          "signal_length": 1021
+        },
+        "righteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\fx\\fx2_pHIT_righteye.plist",
+          "signal_length": 1021
+        }
+      },
+      "3": {
+        "head": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\fx\\fx3_pHIT_head.plist",
+          "signal_length": 1019
+        },
+        "lefteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\fx\\fx3_pHIT_lefteye.plist",
+          "signal_length": 1019
+        },
+        "righteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\fx\\fx3_pHIT_righteye.plist",
+          "signal_length": 1019
+        }
+      }
+    },
+    "2": {
+      "4": {
+        "head": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\fx\\fx4_pHIT_head.plist",
+          "signal_length": 893
+        },
+        "lefteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\fx\\fx4_pHIT_lefteye.plist",
+          "signal_length": 893
+        },
+        "righteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\fx\\fx4_pHIT_righteye.plist",
+          "signal_length": 892
+        }
+      },
+      "5": {
+        "head": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\fx\\fx5_pHIT_head.plist",
+          "signal_length": 1853
+        },
+        "lefteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\fx\\fx5_pHIT_lefteye.plist",
+          "signal_length": 1852
+        },
+        "righteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\fx\\fx5_pHIT_righteye.plist",
+          "signal_length": 1852
+        }
+      },
+      "6": {
+        "head": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\fx\\fx6_pHIT_head.plist",
+          "signal_length": 1933
+        },
+        "lefteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\fx\\fx6_pHIT_lefteye.plist",
+          "signal_length": 1933
+        },
+        "righteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\fx\\fx6_pHIT_righteye.plist",
+          "signal_length": 1933
+        }
+      }
+    }
+  },
+  "sl": {
+    "1": {
+      "1": {
+        "head": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\sl\\sl1_pHIT_head.plist",
+          "signal_length": 963
+        },
+        "lefteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\sl\\sl1_pHIT_lefteye.plist",
+          "signal_length": 963
+        },
+        "righteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\sl\\sl1_pHIT_righteye.plist",
+          "signal_length": 963
+        }
+      },
+      "2": {
+        "head": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\sl\\sl2_pHIT_head.plist",
+          "signal_length": 964
+        },
+        "lefteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\sl\\sl2_pHIT_lefteye.plist",
+          "signal_length": 964
+        },
+        "righteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\sl\\sl2_pHIT_righteye.plist",
+          "signal_length": 964
+        }
+      },
+      "3": {
+        "head": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\sl\\sl3_pHIT_head.plist",
+          "signal_length": 992
+        },
+        "lefteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\sl\\sl3_pHIT_lefteye.plist",
+          "signal_length": 991
+        },
+        "righteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\sl\\sl3_pHIT_righteye.plist",
+          "signal_length": 991
+        }
+      }
+    },
+    "2": {
+      "4": {
+        "head": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\sl\\sl4_pHIT_head.plist",
+          "signal_length": 1927
+        },
+        "lefteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\sl\\sl4_pHIT_lefteye.plist",
+          "signal_length": 1927
+        },
+        "righteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\sl\\sl4_pHIT_righteye.plist",
+          "signal_length": 1927
+        }
+      },
+      "5": {
+        "head": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\sl\\sl5_pHIT_head.plist",
+          "signal_length": 978
+        },
+        "lefteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\sl\\sl5_pHIT_lefteye.plist",
+          "signal_length": 978
+        },
+        "righteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\sl\\sl5_pHIT_righteye.plist",
+          "signal_length": 977
+        }
+      },
+      "6": {
+        "head": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\sl\\sl6_pHIT_head.plist",
+          "signal_length": 808
+        },
+        "lefteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\sl\\sl6_pHIT_lefteye.plist",
+          "signal_length": 808
+        },
+        "righteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\sl\\sl6_pHIT_righteye.plist",
+          "signal_length": 808
+        }
+      }
+    }
+  },
+  "wyc": {
+    "1": {
+      "1": {
+        "head": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\wyc\\wyc1_pHIT_head.plist",
+          "signal_length": 993
+        },
+        "lefteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\wyc\\wyc1_pHIT_lefteye.plist",
+          "signal_length": 993
+        },
+        "righteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\wyc\\wyc1_pHIT_righteye.plist",
+          "signal_length": 993
+        }
+      },
+      "2": {
+        "head": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\wyc\\wyc2_pHIT_head.plist",
+          "signal_length": 968
+        },
+        "lefteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\wyc\\wyc2_pHIT_lefteye.plist",
+          "signal_length": 968
+        },
+        "righteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\wyc\\wyc2_pHIT_righteye.plist",
+          "signal_length": 968
+        }
+      },
+      "3": {
+        "head": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\wyc\\wyc3_pHIT_head.plist",
+          "signal_length": 911
+        },
+        "lefteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\wyc\\wyc3_pHIT_lefteye.plist",
+          "signal_length": 911
+        },
+        "righteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\wyc\\wyc3_pHIT_righteye.plist",
+          "signal_length": 911
+        }
+      }
+    },
+    "2": {
+      "4": {
+        "head": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\wyc\\wyc4_pHIT_head.plist",
+          "signal_length": 1000
+        },
+        "lefteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\wyc\\wyc4_pHIT_lefteye.plist",
+          "signal_length": 1000
+        },
+        "righteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\wyc\\wyc4_pHIT_righteye.plist",
+          "signal_length": 999
+        }
+      },
+      "5": {
+        "head": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\wyc\\wyc5_pHIT_head.plist",
+          "signal_length": 1708
+        },
+        "lefteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\wyc\\wyc5_pHIT_lefteye.plist",
+          "signal_length": 1708
+        },
+        "righteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\wyc\\wyc5_pHIT_righteye.plist",
+          "signal_length": 1708
+        }
+      },
+      "6": {
+        "head": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\wyc\\wyc6_pHIT_head.plist",
+          "signal_length": 1991
+        },
+        "lefteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\wyc\\wyc6_pHIT_lefteye.plist",
+          "signal_length": 1990
+        },
+        "righteye": {
+          "data_path": "c:\\Users\\83549\\Documents\\tmp_proj\\read_plist\\data\\standardization\\wyc\\wyc6_pHIT_righteye.plist",
+          "signal_length": 1990
+        }
+      }
+    }
+  }
+}

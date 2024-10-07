@@ -1354,8 +1354,60 @@ if __name__ == '__main__':
         
         if head_file and left_eye_file and right_eye_file:
             
-            enhanced_saccadic_wave_report(head_file, left_eye_file, right_eye_file, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, quantification_threshold)
+            fig_list, count_list, hist_fig_list, speed_gain_list = enhanced_saccadic_wave_report_download(head_file, left_eye_file, right_eye_file, sampling_frequency, high_pass_cutoff, high_pass_order, low_pass_cutoff, low_pass_order, moving_average_window, quantification_threshold)
             
+            
+            with st.expander('Result Overview'):
+                
+                for index, (fig_name, fig) in enumerate(fig_list):
+                    
+                    if index <=1 or index >= len(fig_list) - 4:
+                            
+                        st.bokeh_chart(fig)
+                        
+            with st.expander('Result Detail'):
+                
+                label_index_list = [[], [], [], []]
+                prompt_list = ['Left eye, head turn right', 'Left eye, head turn left', 'Right eye, head turn right', 'Right eye, head turn left']
+                        
+                for index, (fig_name, fig) in enumerate(fig_list):
+                    
+                    
+                    if index >1 and index < len(fig_list) - 4:    
+                        wave = (index - 2) // 3 
+                        wave = int(wave)
+                        
+                        label = 0
+                        
+                        for jndex, count in enumerate(count_list):
+                            if wave in count:
+                                label = jndex
+                        
+                            
+                        if label == 0:
+                            label_index_list[0].append(index)
+                        elif label == 1:
+                            label_index_list[1].append(index)
+                        elif label == 2:
+                            label_index_list[2].append(index)
+                        elif label == 3:
+                            label_index_list[3].append(index)
+                
+                
+                for prompt, label_index in zip(prompt_list, label_index_list):
+                    
+                    st.write('------------------------------------')
+                    st.write(prompt)
+                    
+                    for index in label_index:
+                        wave = (index - 2) // 3
+                        wave = int(wave)
+                        st.write(f'Wave {wave}')
+                        st.bokeh_chart(fig_list[index][1])
+                        
+                    
+                    
+                    
             
     if mode == 'Enchanced Saccadic Wave Report Download':
         

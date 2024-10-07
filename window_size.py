@@ -1,0 +1,57 @@
+import plistlib
+import matplotlib.pyplot as plt
+from matplotlib.widgets import RectangleSelector
+import numpy as np
+
+def load_plist(file_path):
+    with open(file_path, 'rb') as f:
+        return plistlib.load(f)
+
+class StageSelectorTool:
+    def __init__(self, data):
+        self.data = data
+        self.stages = []
+        self.current_stage = []
+        
+        self.fig, self.ax = plt.subplots(figsize=(12, 6))
+        self.line, = self.ax.plot(data)
+        
+        self.rs = RectangleSelector(self.ax, self.line_select_callback,
+                                    useblit=True, button=[1],
+                                    minspanx=5, minspany=5, spancoords='pixels',
+                                    interactive=True)
+        
+        self.ax.set_title("选择每个阶段的范围 (按 'q' 退出)")
+        self.fig.canvas.mpl_connect('key_press_event', self.on_key)
+        
+        plt.show()
+
+    def line_select_callback(self, eclick, erelease):
+        x1, _ = eclick.xdata, eclick.ydata
+        x2, _ = erelease.xdata, erelease.ydata
+        self.current_stage = [int(min(x1, x2)), int(max(x1, x2))]
+
+    def on_key(self, event):
+        if event.key == 'enter':
+            if self.current_stage:
+                self.stages.append(self.current_stage)
+                start, end = self.current_stage
+                self.ax.axvline(x=start, color='r', linestyle='--')
+                self.ax.axvline(x=end, color='r', linestyle='--')
+                self.fig.canvas.draw()
+                print(f"阶段 {len(self.stages)}: 从 {start} 到 {end}, 包含 {end-start+1} 个数据点")
+                self.current_stage = []
+        elif event.key == 'q':
+            plt.close(self.fig)
+            self.print_summary()
+
+    def print_summary(self):
+        print("\n总结:")
+        for i, (start, end) in enumerate(self.stages, 1):
+            print(f"阶段 {i}: 从 {start} 到 {end}, 包含 {end-start+1} 个数据点")
+
+if __name__ == "__main__":
+    file_path = r".\data\standardization\wyc\wyc5_pHIT_head.plist"
+    data = load_plist(file_path)
+    
+    selector = StageSelectorTool(data)
