@@ -4,3 +4,6 @@
 *.spec
 *.zip
 *.svg
+/animation/dist
+/animation/build
+/archieve
