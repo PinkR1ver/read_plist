@@ -21,7 +21,7 @@ class StageSelectorTool:
                                     minspanx=5, minspany=5, spancoords='pixels',
                                     interactive=True)
         
-        self.ax.set_title("选择每个阶段的范围 (按 'q' 退出)")
+        self.ax.set_title("Select the range for each stage (press 'q' to quit)")
         self.fig.canvas.mpl_connect('key_press_event', self.on_key)
         
         plt.show()
@@ -39,19 +39,19 @@ class StageSelectorTool:
                 self.ax.axvline(x=start, color='r', linestyle='--')
                 self.ax.axvline(x=end, color='r', linestyle='--')
                 self.fig.canvas.draw()
-                print(f"阶段 {len(self.stages)}: 从 {start} 到 {end}, 包含 {end-start+1} 个数据点")
+                print(f"Stage {len(self.stages)}: from {start} to {end}, containing {end-start+1} data points")
                 self.current_stage = []
         elif event.key == 'q':
             plt.close(self.fig)
             self.print_summary()
 
     def print_summary(self):
-        print("\n总结:")
+        print("\nSummary:")
         for i, (start, end) in enumerate(self.stages, 1):
-            print(f"阶段 {i}: 从 {start} 到 {end}, 包含 {end-start+1} 个数据点")
+            print(f"Stage {i}: from {start} to {end}, containing {end-start+1} data points")
 
 if __name__ == "__main__":
-    file_path = r".\data\standardization\wyc\wyc5_pHIT_head.plist"
+    file_path = r".\data\standardization\wyc\wyc3_pHIT_lefteye.plist"
     data = load_plist(file_path)
     
     selector = StageSelectorTool(data)

@@ -1,70 +1,106 @@
 import json
-import numpy as np
-import matplotlib.pyplot as plt
 import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-base_path = os.path.dirname(os.path.abspath(__file__))
-result_path = os.path.join(base_path, 'result')
-
-def load_data(file_path):
-    with open(file_path, 'r') as f:
-        data = json.load(f)
-    return data['collected_data']
-
-def detect_outliers_iqr(data, factor=1.5):
-    q1 = np.percentile(data, 25)
-    q3 = np.percentile(data, 75)
+def calculate_stability_metrics(data):
+    data = np.array(data)
+    std = np.std(data)
+    cv = (std / np.mean(data)) * 100 if np.mean(data) != 0 else np.inf
+    q1, q3 = np.percentile(data, [25, 75])
     iqr = q3 - q1
-    lower_bound = q1 - (factor * iqr)
-    upper_bound = q3 + (factor * iqr)
-    return (data < lower_bound) | (data > upper_bound)
+    mad = np.mean(np.abs(data - np.mean(data)))
+    data_range = np.max(data) - np.min(data)
+    
+    return {
+        'std': std,
+        'cv': cv,
+        'iqr': iqr,
+        'mad': mad,
+        'range': data_range
+    }
 
-def process_and_visualize(data):
-    stages = [0, 5, 10, 15, 25, 0, -5, -10, -15, -25]
+def analyze_stability(data):
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    result_path = os.path.join(base_path, 'result', 'stability_analysis')
+    os.makedirs(result_path, exist_ok=True)
+
+    rows = []
+
+    for exp_type, exp_type_data in data['collected_data'].items():
+        for part, part_data in exp_type_data.items():
+            for stage, stage_data in part_data.items():
+                for experiment in stage_data:
+                    patient = experiment['patient']
+                    exp_num = experiment['exp_num']
+                    metrics = calculate_stability_metrics(experiment['data'])
+                    row = {
+                        'Exp Type': exp_type,
+                        'Part': part,
+                        'Stage': stage,
+                        'Patient': patient,
+                        'Exp Num': exp_num,
+                        **metrics
+                    }
+                    rows.append(row)
+
+    df = pd.DataFrame(rows)
     
-    # 创建保存图形的文件夹
-    output_folder = os.path.join(result_path, 'outlier_detection_results')
-    os.makedirs(output_folder, exist_ok=True)
+    # 保存详细的 CSV 报告
+    detailed_csv_file = os.path.join(result_path, 'detailed_stability_analysis.csv')
+    df.to_csv(detailed_csv_file, index=False)
+    print(f"Detailed stability analysis results saved to {detailed_csv_file}")
+
+    # 创建并保存汇总报告
+    summary_df = df.groupby(['Exp Type', 'Part', 'Stage']).agg({
+        'std': ['mean', 'std'],
+        'cv': ['mean', 'std'],
+        'iqr': ['mean', 'std'],
+        'mad': ['mean', 'std'],
+        'range': ['mean', 'std']
+    }).reset_index()
+    summary_df.columns = ['Exp Type', 'Part', 'Stage', 
+                          'std_mean', 'std_std', 
+                          'cv_mean', 'cv_std', 
+                          'iqr_mean', 'iqr_std', 
+                          'mad_mean', 'mad_std', 
+                          'range_mean', 'range_std']
     
-    for exp_type in ['1', '2']:
-        part = 'lefteye' if exp_type == '1' else 'head'
+    summary_csv_file = os.path.join(result_path, 'summary_stability_analysis.csv')
+    summary_df.to_csv(summary_csv_file, index=False)
+    print(f"Summary stability analysis results saved to {summary_csv_file}")
+
+    # 创建稳定性热图
+    for exp_type in df['Exp Type'].unique():
+        exp_type_df = df[df['Exp Type'] == exp_type]
         
-        for stage in stages:
-            for exp_index, experiment in enumerate(data[exp_type][part][str(stage)]):
-                stage_data = np.array(experiment['data'])
-                outliers = detect_outliers_iqr(stage_data)
-                
-                fig, ax = plt.subplots(figsize=(8, 6))
-                ax.set_title(f'Exp Type {exp_type} ({part}) - Stage {stage} - Experiment {exp_index + 1}')
-                ax.set_xlabel('Data Point Index')
-                ax.set_ylabel('Value')
-                
-                ax.scatter(range(len(stage_data)), stage_data, 
-                           c=['red' if x else 'blue' for x in outliers], 
-                           alpha=0.5, s=20)
-                
-                # 添加IQR边界
-                q1, q3 = np.percentile(stage_data, [25, 75])
-                iqr = q3 - q1
-                ax.axhline(y=q1 - 1.5*iqr, color='orange', linestyle=':', label='IQR Bounds')
-                ax.axhline(y=q3 + 1.5*iqr, color='orange', linestyle=':')
-                
-                ax.axhline(y=np.median(stage_data), color='green', linestyle='--', label='Median')
-                
-                ax.legend()
-                
-                outlier_count = np.sum(outliers)
-                ax.text(0.05, 0.95, f'Outliers: {outlier_count}/{len(stage_data)}', 
-                        transform=ax.transAxes, verticalalignment='top')
-                
-                plt.tight_layout()
-                
-                # 保存图形
-                filename = f'exp_type_{exp_type}_stage_{stage}_experiment_{exp_index + 1}.png'
-                plt.savefig(os.path.join(output_folder, filename), dpi=300, bbox_inches='tight')
-                plt.close(fig)
+        for part in exp_type_df['Part'].unique():
+            part_df = exp_type_df[exp_type_df['Part'] == part]
+            
+            pivot_df = part_df.pivot_table(values='cv', index='Stage', columns='Patient', aggfunc='mean')
+            
+            plt.figure(figsize=(12, 8))
+            sns.heatmap(pivot_df, annot=True, cmap='YlOrRd_r', fmt='.2f')
+            plt.title(f'Stability Heatmap (CV) - {exp_type} - {part}')
+            plt.tight_layout()
+            
+            heatmap_file = os.path.join(result_path, f'stability_heatmap_{exp_type}_{part}.png')
+            plt.savefig(heatmap_file, dpi=300, bbox_inches='tight')
+            plt.close()
+            
+            print(f"Stability heatmap for {exp_type} - {part} saved to {heatmap_file}")
 
 if __name__ == "__main__":
-    data = load_data('collected_experiment_data.json')
-    process_and_visualize(data)
-    print("IQR-based outlier detection and visualization completed. Results saved in 'outlier_detection_results' folder.")
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    data_file = os.path.join(base_path, 'cleaned_experiment_data.json')
+    
+    with open(data_file, 'r') as f:
+        data = json.load(f)
+    
+    print("Cleaned data loaded successfully.")
+
+    analyze_stability(data)
+    
+    print("Stability analysis completed. CSV reports and heatmaps saved in 'result/stability_analysis' folder.")
