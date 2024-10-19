@@ -19,6 +19,7 @@ class VisualAttentionTrainer:
         self.root.title("视觉注意力训练配置")
         self.create_widgets()
         self.create_menu()
+        self.center_y = None  # 添加这行来存储调整后的位置
 
     def create_widgets(self):
         ttk.Label(self.root, text="显示器对角线尺寸（英寸）:").grid(column=0, row=0, padx=5, pady=5)
@@ -34,7 +35,7 @@ class VisualAttentionTrainer:
         ttk.Label(self.root, text="红点大小（显示器对角线的百分比）:").grid(column=0, row=2, padx=5, pady=5)
         self.dot_size_entry = ttk.Entry(self.root)
         self.dot_size_entry.grid(column=1, row=2, padx=5, pady=5)
-        self.dot_size_entry.insert(0, "2")
+        self.dot_size_entry.insert(0, "1")
 
         start_button = ttk.Button(self.root, text="开始实验", command=self.start_experiment)
         start_button.grid(column=0, row=3, columnspan=2, pady=10)
@@ -120,7 +121,9 @@ class VisualAttentionTrainer:
             positions.append((center_x, center_y))
             return positions
 
-        center_y = height // 2
+        if self.center_y is None:
+            self.center_y = height // 2  # 如果是第一次运行,设置为屏幕中间
+        center_y = self.center_y
         ball_positions = calculate_positions(center_y)
 
         beep_sound_path = resource_path("beep.wav")
@@ -154,9 +157,11 @@ class VisualAttentionTrainer:
                     elif event.key == pygame.K_UP and adjusting:
                         center_y = max(ball_radius, center_y - 5)
                         ball_positions = calculate_positions(center_y)
+                        self.center_y = center_y  # 更新存储的位置
                     elif event.key == pygame.K_DOWN and adjusting:
                         center_y = min(height - ball_radius, center_y + 5)
                         ball_positions = calculate_positions(center_y)
+                        self.center_y = center_y  # 更新存储的位置
 
             current_time = pygame.time.get_ticks()
 
